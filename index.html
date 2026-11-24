@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>ITS HANDBALL IQ v2.4</title>
+    <title>ITS HANDBALL IQ v2.4.1</title>
     <style>
       * {
         box-sizing: border-box;
@@ -213,17 +213,46 @@
       #courtPanel.expanded > * {
         flex-shrink: 0;
       }
-      #actionbar {
+      body.quizActive { overflow: hidden; }
+      #quiz {
         position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
+        inset: 0;
         width: min(100%, 680px);
-        z-index: 6;
+        margin: 0 auto;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 0;
         background: white;
-        padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-        box-shadow: 0 -3px 16px #183b3422;
       }
+      #quizContent {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+          12px max(12px, env(safe-area-inset-left));
+      }
+      #actionbar {
+        flex: none;
+        background: white;
+        padding: 8px max(12px, env(safe-area-inset-right))
+          calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        box-shadow: 0 -3px 16px #183b3422;
+        z-index: 1;
+      }
+      body.courtOpen #actionbar { visibility: hidden; }
+      #quizContent:focus-within { scroll-padding: 10px; }
+      #feedbackTabs { margin: 8px 0; }
+      #feedbackTabs button[aria-pressed="true"] {
+        background: #176e60;
+        border-color: #176e60;
+        color: white;
+      }
+      #feedback p { margin: 8px 0; }
+      #closeCourt { order: -1; }
+      #advanced { margin: 12px 0; }
+      #advanced summary { cursor: pointer; padding: 8px 0; }
       #actionbar button {
         margin: 0;
       }
@@ -238,6 +267,9 @@
         position: static;
       }
       #courtPanel.expanded #closeCourt {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         display: block;
       }
       #courtPanel.expanded #expand {
@@ -275,13 +307,16 @@
       <header>
         <small>ITS U-15 / PLAYER DEVELOPMENT</small>
         <h1>HANDBALL IQ</h1>
-        見る・考える・判断する <small> / v2.4</small>
+        見る・考える・判断する <small> / v2.4.1</small>
       </header>
       <section id="home">
         <h2>今日のトレーニング</h2>
         <p>
           1日5分。動きを観察し、次のプレーとその理由を選ぼう。一部の問題では、回答に応じて追加の局面が出題されます。
         </p>
+        <button class="primary wide" id="start">5問を始める</button>
+        <details id="advanced">
+        <summary>出題条件を変更</summary>
         <div class="grid">
           <div>
             <label for="cat">カテゴリー</label
@@ -325,8 +360,10 @@
         ><select id="mode">
           <option value="study">学習（時間非表示）</option>
           <option value="speed">判断スピード（時間表示）</option></select
-        ><button class="primary wide" id="start">トレーニング開始</button
-        ><button class="wide" id="review">苦手問題を復習</button
+        >
+        <p class="muted">ポジション指定でも共通ルールを含みます。時間は判断場面の表示から最初の選択までを計測し、結果に表示します。</p>
+        </details>
+        <button class="wide" id="review">苦手問題を復習</button
         ><button class="wide" id="resume" hidden>途中から再開</button
         ><button class="wide" id="history">学習記録</button>
         <div class="row">
@@ -345,6 +382,7 @@
         <p id="notice" role="status" class="muted"></p>
       </section>
       <section id="quiz" hidden>
+        <div id="quizContent">
         <div class="row">
           <strong id="progress"></strong
           ><span id="clock" style="text-align: right"></span>
@@ -352,6 +390,11 @@
         <div class="bar"><i id="bar"></i></div>
         <p class="muted" id="meta"></p>
         <h2 id="prompt"></h2>
+        <div id="feedbackTabs" class="row" hidden>
+          <button id="explanationTab" aria-pressed="true">解説</button>
+          <button id="courtTab" aria-pressed="false">コート</button>
+        </div>
+        <div id="feedback" class="feedback" hidden></div>
         <div id="courtPanel">
           <div id="court"></div>
           <button id="closeCourt" class="wide">拡大を閉じる</button>
@@ -371,23 +414,29 @@
             ><button id="pause">一時停止</button
             ><button id="skip">判断場面へ</button>
           </div>
-          <button id="demo" class="wide" hidden>推奨プレーの解説を見る</button>
+          <p id="demoCaption" class="muted" hidden></p>
+          <label id="demoLabel" for="demoChoice" hidden>推奨案</label>
+          <select id="demoChoice" hidden></select>
         </div>
         <p id="saveStatus" class="muted" role="status"></p>
+        <details id="glossary">
+          <summary>コートの用語</summary>
+          <p class="muted">CB＝センター、LB・RB＝左右バック、LW・RW＝左右サイド、PV＝ポスト、D＝守備、GK＝ゴールキーパー。DFの番号は図の左から順に、前列は後ろの列のあとに付けています。</p>
+        </details>
         <p id="phase" role="status" class="muted"></p>
         <div id="choices"></div>
         <div id="reasons" hidden></div>
-        <div id="feedback" class="feedback" hidden></div>
+        <button id="quit" class="wide">中断してホームへ</button>
+        </div>
         <div id="actionbar" hidden>
           <button id="submit" class="primary wide" hidden>回答を確定</button
           ><button id="next" class="primary wide" hidden>次の問題</button>
         </div>
-        <button id="quit" class="wide">中断してホームへ</button>
       </section>
       <section id="result" hidden></section>
       <footer class="muted">
         一般競技規則はJHA
-        2026年度版を参照。大会での適用条件は主催者の要項を確認してください。<a
+        2026年度版（2026年7月1日適用）を参照。大会での適用条件は主催者の要項を確認してください。<a
           href="https://handball.or.jp/rule/doc/2026competition_rule.pdf"
           target="_blank"
           rel="noopener"
@@ -446,7 +495,7 @@ tactical.forEach((a,i)=>{let players=[],at=a.df?'R':'B',de=a.df?'B':'R';let map=
 // Curated defensive breakdown scenarios: explicit ball transfer and staggered movement.
 const breakdown=[
 ['0-6','D4','LB','CB','左中央DFがLBに出た後、CBが内側へ侵入する。PVが中央に残る。','CBの進路を閉じ、PVを隣に引き継ぐ','PVを維持し隣にCB対応を求める','LBの返球コースを切る','外側へ広がる','中央突破を止めながらPVへの対応を共有できる','隣がCBを止められる間合いならPVを維持できる','返球を防げても現在の保持者への対応が遅れる','中央のカバー距離が広がる'],
-['5-1','D3','CB','LB','トップがCBへの圧力から戻れず、LBが内側へ切り込む。','LBの進路に出てトップに背後を任せる','中央を保ちトップの回復を待つ','PVに密着する','逆側のRBへ出る','保持者の中央侵入に直接対応できる','トップが間に合う場合は列を維持できる','PVは抑えられるがLBに助走を許す','ボール側の危険が増す'],
+['5-1','D3','CB','LB','トップがCBへの圧力から戻れず、LBが内側へ切り込む。隣の後方DFはPVを引き継げる位置にいる。','LBの進路に出て隣のDFにPVを任せる','中央を保ちトップの回復を待つ','PVに密着する','逆側のRBへ出る','隣の後方DFがPVを受け持てるので、保持者の中央侵入に直接対応できる','トップが間に合う場合は列を維持できる','PVは抑えられるがLBに助走を許す','ボール側の危険が増す'],
 ['3-2-1','D2','RB','CB','中間DFがRBへ出て、CBがその内側に入り直す。','中央でCBを受け止め中間DFと連携','半歩前でパスを牽制する','PVだけを追う','RWへ先に移動する','後方中央の突破経路を優先できる','パスを遅らせられるが背後の管理が必要','CBの侵入への対応が遅れる','中央の守備が薄くなる'],
 ['4-2','D3','LB','RB','前方DFが左に偏り、RBへボールが移る。PVが右中央へ移動する。','RBの進路とPVを見ながら中央をカバー','前方DFにRBを任せPVを維持','RWへのパスを先に遮断','左側の前方DFへ寄る','中央の二つの攻撃経路に備えられる','前方DFが戻れる場合に有効','外へのパスは抑えるが中央が空く','逆側への移動でボール側が薄くなる']];
 breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entries(attack).map(([n,xy])=>P('R'+n,...xy,n===to?0:0,n===to?-3:0));formations[sys].forEach((xy,j)=>ps.push(P('BD'+(j+1),...xy,j===0?0:.35,j===2?.7:0)));ps.push(P('BK',10,1.5));let opts=v.slice(0,4).map((label,j)=>({...A(label,[3,2,1,0][j]),reasons:[v[4+j], '保持者への対応よりも元の担当位置を維持することを優先する', '次のパスを予測し、現在の突破への対応を後回しにする']}));add('break'+i,DT,'上級','CP',sys+'DF｜'+prompt,ps,'R'+from,'B'+you,opts,v[4],v[4],{def:true,system:sys,passTo:'R'+to});});
@@ -784,6 +833,22 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
           { followup: true, passTo },
         );
       });
+      const keeperCues = {
+        q08: {
+          prompt: "正面のシューターが接近中。相手の踏み切りに合わせる位置取りを選べ。",
+          labels: ["中央で構え、踏み切りが早ければ姿勢を保つ", "間合いがあれば中央で半歩前へ出て構える"],
+        },
+        q11: {
+          prompt: "セーブ直後。相手が前方の走者をマークしている。最初の配球を選べ。",
+          labels: ["近くの味方に確実につないで保持", "近くの味方が前を向けるなら二次速攻へつなぐ"],
+        },
+      };
+      for (const [id, cues] of Object.entries(keeperCues)) {
+        const item = Q.find((question) => question.id === id);
+        item.prompt = cues.prompt;
+        item.opts[0].label = cues.labels[0];
+        item.opts[3].label = cues.labels[1];
+      }
       // Each question may override its own reason prompt, choices and correct index.
       const reasonSettings = {
         "q01-stop": {
@@ -958,6 +1023,9 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
       }
       function screen(id) {
         for (let x of ["home", "quiz", "result"]) $(x).hidden = x !== id;
+        document.body.classList.toggle("quizActive", id === "quiz");
+        document.querySelector("header").inert = id === "quiz";
+        document.querySelector("footer").inert = id === "quiz";
       }
       function home() {
         collapse();
@@ -1026,10 +1094,63 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
       function endCourt() {
         return `<path d="${path(6)} Z" fill="#a9c8c4" stroke="white" stroke-width=".09"/><path d="${path(9)}" fill="none" stroke="white" stroke-width=".09" stroke-dasharray=".15 .15"/><path d="M9.5 7 H10.5 M9.925 4 H10.075" stroke="white" stroke-width=".09"/><rect x="8.5" y="-.45" width="3" height=".45" fill="#455b59" stroke="white" stroke-width=".07"/>`;
       }
+      // The recommendation starts from the observed decision frame.
+      const teamDemos = {
+        t1: { passes: ["BPV"] },
+        t2: { moves: { BD4: [-0.8, 1], BD5: [-1.4, 0.8] } },
+        t3: { moves: { BD5: [0.7, 1.2], BD6: [0, 1.5] } },
+        t4: { passes: ["BRB", "BPV"] },
+        t5: { moves: { BD6: [-1.1, 0.5], BD3: [-0.8, 1.4] } },
+        t6: { moves: { BD3: [0.6, 2], BD4: [-0.8, 0.5] } },
+        t7: { passes: ["BLB"] },
+        t8: { moves: { BD4: [0.8, 1.4], BD1: [1.4, 1] } },
+        t9: { moves: { BD5: [-1.5, 0.6], BD3: [-1, 1] } },
+        t10: { passes: ["BPV"] },
+        t11: { moves: { BD5: [1.2, 0.5], BD6: [-1.2, 0.5] } },
+        t12: { moves: { BD3: [0.8, 2], BD4: [-0.8, 1] } },
+        break0: { moves: { BD4: [-1, 2], BD5: [-2, 0.5] } },
+        break1: { moves: { BD3: [-1.5, 2], BD4: [-1.5, 0.5] } },
+        break2: { moves: { BD2: [0, 2.1], BD5: [-1.1, -1.3] } },
+        break3: { moves: { BD3: [0.4, 1.5], BD4: [-1.5, 1.4] } },
+      };
       let mirrored = false,
         explaining = false,
+        demoIndex = 0,
         motionTime = 0;
-      function pos(p, t) {
+      function demoPlan() {
+        const option = recommended()[demoIndex];
+        if (!option || q.rule) return {};
+        if (teamDemos[q.id]) return teamDemos[q.id];
+        if (q.id === "q08" && demoIndex === 1) return { moves: { BK: [0, 0.5] } };
+        if (q.id === "q11" && demoIndex === 1) return { passes: ["B1"] };
+        if (typeof option.target === "string") return { passes: [option.target] };
+        if (Array.isArray(option.target)) {
+          const player = q.players.find((p) => p.id === q.you);
+          return { moves: { [q.you]: [
+            option.target[0] - player.x - player.dx,
+            option.target[1] - player.y - player.dy,
+          ] } };
+        }
+        return {};
+      }
+      function ballLocation(t, plan) {
+        const holder = q.players.find((p) => p.id === (explaining ? q.passTo || q.ball : q.ball));
+        const passes = explaining ? plan.passes || [] : q.passTo ? [q.passTo] : [];
+        if (!passes.length) return pos(holder, t);
+        if (!explaining) {
+          const progress = Math.max(0, Math.min(1, (t - 0.22) / 0.4));
+          const from = pos(holder, Math.min(t, 0.22));
+          const to = pos(q.players.find((p) => p.id === passes[0]), t);
+          return from.map((value, i) => value + (to[i] - value) * progress);
+        }
+        const segment = Math.min(passes.length - 1, Math.floor(motionTime * passes.length));
+        const progress = Math.max(0, Math.min(1, (motionTime * passes.length - segment - 0.15) / 0.65));
+        const from = segment ? q.players.find((p) => p.id === passes[segment - 1]) : holder;
+        const to = q.players.find((p) => p.id === passes[segment]);
+        const end = pos(to, t);
+        return pos(from, t).map((value, i) => value + (end[i] - value) * progress);
+      }
+      function pos(p, t, moves) {
         let u = Math.max(
           0,
           Math.min(
@@ -1040,7 +1161,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         );
         let x = p.x + p.dx * u,
           y = p.y + p.dy * u;
-        const move = explaining && q.demoMoves?.[p.id];
+        const move = moves?.[p.id];
         if (move) {
           x += move[0] * motionTime;
           y += move[1] * motionTime;
@@ -1075,39 +1196,25 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
           $("court").innerHTML = "";
           return;
         }
+        const plan = explaining ? demoPlan() : {};
         let h = q.full ? 40 : 20;
         let g = `<svg viewBox="-.6 -.7 21.2 ${h + 1.4}" role="group" aria-label="ハンドボールコート"><rect width="20" height="${h}" fill="#e7d6b6" stroke="white" stroke-width=".1"/>${endCourt()}${q.full ? `<g transform="translate(20 40) rotate(180)">${endCourt()}</g><path d="M0 20 H20" stroke="white" stroke-width=".1"/>` : ""}<text x="10" y="${q.full ? 20 : 19.4}" font-size=".55" text-anchor="middle" fill="#36544d">${(q.ball.startsWith("R") ? "相手の攻撃方向" : "自チーム攻撃方向") + (q.down ? " ↓" : " ↑")}</text>`;
         for (let p of q.players) {
-          let [x, y] = pos(p, t),
+          let [x, y] = pos(p, t, plan.moves),
             blue = p.id[0] === "B",
             col = blue ? "#236b9c" : "#b74d51",
             ownAttacksDown = Boolean(q.down) === q.ball.startsWith("B"),
             angle = blue === ownAttacksDown ? 180 : 0;
           g += `<g transform="translate(${x} ${y})"><circle r=".86" fill="${p.id === q.you ? "#e1f5d9" : "none"}" stroke="${p.id === q.you ? "#16836b" : "none"}" stroke-width=".15"/><g transform="rotate(${angle})"><ellipse cy=".1" rx=".64" ry=".39" fill="${col}" stroke="white" stroke-width=".08"/><path d="M-.55 .05 L-.8 -.28 M.55 .05 L.8 -.28" stroke="${col}" stroke-width=".22" stroke-linecap="round"/><circle cy="-.35" r=".26" fill="#e9bc96" stroke="white" stroke-width=".05"/></g><text y=".95" font-size=".48" text-anchor="middle" fill="#173c36">${p.id === q.you ? "YOU" : p.id.endsWith("K") ? "GK" : p.id.slice(1)}</text></g>`;
         }
-        let bp = q.players.find((p) => p.id === q.ball),
-          ep = q.players.find((p) => p.id === q.passTo);
-        if (bp) {
-          let [x, y] = pos(bp, t);
-          if (ep) {
-            let z = Math.max(0, Math.min(1, (t - 0.22) / 0.4)),
-              a = pos(bp, 0.22),
-              b = pos(ep, t);
-            x = a[0] + (b[0] - a[0]) * z;
-            y = a[1] + (b[1] - a[1]) * z;
-          }
-          g += `<circle cx="${x + (mirrored ? -0.45 : 0.45)}" cy="${y - 0.35}" r=".26" fill="#f39a20" stroke="#81511d" stroke-width=".07"/>`;
+        const [ballX, ballY] = ballLocation(t, plan);
+        const hasPass = explaining && plan.passes?.length;
+        const ballOffset = hasPass ? 0 : mirrored ? -0.45 : 0.45;
+        let x = ballX, y = ballY;
+        if (explaining && !hasPass && plan.moves) {
+          [x, y] = pos(q.players.find((p) => p.id === (q.passTo || q.ball)), t, plan.moves);
         }
-        if (explaining) {
-          const player = q.players.find((p) => p.id === q.you);
-          const a = pos(player, 1);
-          const targets = recommended()
-            .map((o) => target(o, 1))
-            .filter(Boolean);
-          for (const v of targets.length ? targets : [a]) {
-            g += `<path d="M${a.join(" ")} L${v.join(" ")}" stroke="#16836b" stroke-width=".22" stroke-dasharray=".35 .2"/><circle data-focus cx="${v[0]}" cy="${v[1]}" r="1.1" fill="none" stroke="#16836b" stroke-width=".2"/>`;
-          }
-        }
+        g += `<circle data-ball cx="${x + ballOffset}" cy="${y - (hasPass ? 0 : 0.35)}" r=".26" fill="#f39a20" stroke="#81511d" stroke-width=".07"/>`;
         if (ready && stage !== "feedback")
           q.opts.forEach((o, i) => {
             if (!o.target) return;
@@ -1125,6 +1232,15 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
             g += `<circle data-target="${i}" tabindex="0" role="button" aria-label="${escapeAttribute(o.label)}" aria-pressed="${selected === i}" cx="${x}" cy="${y}" r=".94" fill="${selected === i ? "#16836b" : "#fff"}" fill-opacity="${selected === i ? 0.28 : 0.06}" stroke="${selected === i ? "#16836b" : "#425e56"}" stroke-width=".12" stroke-dasharray=".2 .15"/>`;
           });
         $("court").innerHTML = g + "</svg>";
+        if (ready && stage !== "feedback") {
+          const onCourt = $("court").querySelector("[data-target]");
+          $("phase").textContent = onCourt && onCourt.getBoundingClientRect().width >= 44
+            ? "判断場面：コートまたは選択肢をタップ"
+            : "判断場面：選択肢を選ぼう";
+          $("court").querySelectorAll("[data-target]").forEach((node) => {
+            if (node.getBoundingClientRect().width < 44) node.remove();
+          });
+        }
         if (ready)
           $("court")
             .querySelectorAll("[data-target]")
@@ -1148,8 +1264,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         if (elapsed >= duration) {
           if (explaining) {
             stop();
-            explaining = false;
-            $("pause").textContent = "再生";
+            $("pause").textContent = "もう一度再生";
             return;
           }
           freeze();
@@ -1171,13 +1286,19 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         ready = true;
         stage = "choose";
         started = performance.now();
-        $("phase").textContent = "判断場面：コートまたは選択肢をタップ";
+        $("phase").textContent = "判断場面：選択肢を選ぼう";
         $("pause").disabled = true;
         $("skip").disabled = true;
         draw(1);
         renderChoices();
         remember();
       }
+      function updateProgress() {
+        const extra = s.ids.filter((id) => byId(id)?.followup).length;
+        $("progress").textContent = `${s.pos + 1} / ${s.ids.length}` +
+          (extra ? `（追加 ${extra}問を含む）` : "");
+      }
+
       function show() {
         collapse();
         $("quiz").classList.remove("feedbackMode");
@@ -1200,7 +1321,11 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
               ].join(""),
             ) &&
             Math.random() < 0.5);
-        $("demo").hidden = true;
+        demoIndex = 0;
+        $("feedbackTabs").hidden = true;
+        $("demoChoice").hidden = $("demoLabel").hidden = $("demoCaption").hidden = true;
+        $("replay").hidden = $("skip").hidden = false;
+        $("rate").hidden = false;
         $("viewControls").hidden = !!q?.rule;
         if (!q) {
           home();
@@ -1212,7 +1337,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         ready = false;
         elapsed = active = 0;
         stage = "watch";
-        $("progress").textContent = `${s.pos + 1} / ${s.ids.length}`;
+        updateProgress();
         $("bar").style.width = `${(s.pos / s.ids.length) * 100}%`;
         document.querySelector(".legend").hidden = !!q.rule;
         for (let id of ["replay", "pause", "skip"]) $(id).hidden = !!q.rule;
@@ -1236,7 +1361,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
           stage = selected < 0 ? "choose" : "reason";
           $("phase").textContent = q.rule
             ? "競技規則に基づいて回答しよう"
-            : "判断場面：コートまたは選択肢をタップ";
+            : "判断場面：選択肢を選ぼう";
           $("pause").disabled = $("skip").disabled = true;
           draw(1);
           renderChoices();
@@ -1283,7 +1408,8 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         if (selected < 0) {
           active += started ? performance.now() - started : 0;
         }
-        if (selected !== i) {
+        const changed = selected !== i;
+        if (changed) {
           reason = -1;
           reasonOrder = [];
         }
@@ -1297,6 +1423,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
             ?.focus({ preventScroll: true });
         renderChoices();
         renderReasons();
+        if (changed && !q.rule) $("reasons").firstElementChild.focus();
         remember();
         syncBar();
       }
@@ -1322,6 +1449,7 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         );
         let h = document.createElement("h2");
         h.textContent = q.reasonPrompt;
+        h.tabIndex = -1;
         $("reasons").prepend(h);
         $("submit").hidden = false;
         $("submit").disabled = reason < 0;
@@ -1344,43 +1472,51 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         s.feedback = true;
         remember();
         showFeedback(r);
-        topOf(q.rule ? $("feedback") : panel);
-        $("next").focus({ preventScroll: true });
+        $("feedback").focus({ preventScroll: true });
       }
       function showFeedback(r) {
         stage = "feedback";
-        $("progress").textContent = `${s.pos + 1} / ${s.ids.length}`;
+        updateProgress();
         $("feedback").hidden = false;
         const heading = document.createElement("strong");
         heading.textContent = `判断 ${r.score}/3点 ／ ${q.rule ? "ルール判定" : `理由 ${r.reason ? "1" : "0"}/1点`}`;
-        const details = [
-          q.why,
-          "推奨：" +
-            recommended()
-              .map((o) => o.label)
-              .join(" ／ "),
+        const lines = [
+          "推奨　" + recommended().map((o) => o.label).join(" ／ "),
+          "着眼点　" + (q.rule ? q.why : q.reason),
         ];
         if (!q.rule) {
           const option = q.opts[selected];
-          details.push(
-            "選んだプレーの評価：" + option.reasons[option.correctReason],
-            "推奨判断の着眼点：" + q.reason,
-          );
+          if (r.reason === false) {
+            const chosen = option.reasons[reason];
+            const other = q.opts.find((candidate) =>
+              candidate !== option && candidate.reasons[candidate.correctReason] === chosen
+            );
+            lines.push("選んだ理由　" + chosen);
+            lines.push(other
+              ? "この理由は「" + other.label + "」の説明に対応します。"
+              : "選んだプレーで直接変わる位置・パス経路と照らし合わせよう。");
+          }
+          const correct = option.reasons[option.correctReason];
+          if (r.reason === false || correct !== q.reason) lines.push("この選択の根拠　" + correct);
+          if (q.why !== q.reason && q.why !== correct) lines.push(q.why);
         }
-        $("feedback").replaceChildren(
-          heading,
-          ...details.map((detail) => {
-            const paragraph = document.createElement("p");
-            paragraph.textContent = detail;
-            return paragraph;
-          }),
-        );
+        $("feedback").tabIndex = -1;
+        $("feedback").replaceChildren(heading, ...lines.map((line) => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = line;
+          return paragraph;
+        }));
         $("submit").hidden = true;
         $("next").hidden = false;
         $("next").textContent =
           s.pos + 1 === s.ids.length ? "結果を見る" : "次の問題";
-        $("replay").disabled = true;
-        $("demo").hidden = q.rule;
+        $("replay").hidden = $("skip").hidden = true;
+        $("feedbackTabs").hidden = q.rule;
+        $("demoChoice").replaceChildren(...recommended().map((option, index) =>
+          new Option(option.label, String(index))
+        ));
+        $("demoChoice").hidden = $("demoLabel").hidden = recommended().length < 2;
+        configureDemo();
         for (let b of document.querySelectorAll(
           "#choices button,#reasons button",
         ))
@@ -1388,10 +1524,8 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
         draw(1);
         $("bar").style.width = `${((s.pos + 1) / s.ids.length) * 100}%`;
         $("quiz").classList.add("feedbackMode");
-        $("phase").textContent = "解説モード：推奨判断と着眼点を確認";
-        $("pause").disabled = false;
-        $("pause").textContent = "再生";
-        $("skip").disabled = true;
+        $("phase").textContent = "";
+        feedbackTab(false);
         syncBar();
       }
       function summary(records, title) {
@@ -1418,6 +1552,22 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
             return item && !item.rule;
           }),
           rules = records.filter((r) => byId(r.id)?.rule);
+        const timing = document.createElement("p");
+        const groupResult = (group, label) => {
+          if (!group.length) return label + " 未測定";
+          const average = (field) => group.reduce((sum, record) => sum + record[field], 0) / group.length;
+          return `${label} ${average("score").toFixed(1)}/3・${average("sec").toFixed(1)}秒（${group.length}問）`;
+        };
+        timing.textContent = groupResult(tactical, "戦術") + " ／ " + groupResult(rules, "競技ルール");
+        el.querySelector(".grid").after(timing);
+        const reviewLink = document.createElement("button");
+        reviewLink.className = "wide";
+        reviewLink.textContent = weak().length ? `苦手問題を復習（${weak().length}問）` : "次の学習へ";
+        reviewLink.onclick = () => {
+          home();
+          if (weak().length) $("review").click();
+        };
+        timing.after(reviewLink);
         let avgPct = (a) =>
           a.length
             ? Math.round(
@@ -1609,20 +1759,50 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
 
       // v2.4: preserve v2.3 storage key and IDs.
       const panel = $("courtPanel");
+      function outsideCourt() {
+        return [...$("quizContent").children].filter((node) => node !== panel)
+          .concat($("actionbar"));
+      }
       function collapse() {
         panel.classList.remove("expanded");
         document.body.classList.remove("courtOpen");
-        for (const node of [
-          document.querySelector("header"),
-          document.querySelector("footer"),
-          ...$("quiz").children,
-        ]) {
-          node.inert = false;
-        }
+        for (const node of outsideCourt()) node.inert = false;
       }
       function topOf(el) {
-        el.scrollIntoView({ block: "start", behavior: "instant" });
+        if (el === $("quiz")) $("quizContent").scrollTop = 0;
+        else el.scrollIntoView({ block: "start", behavior: "instant" });
       }
+      function feedbackTab(showCourt) {
+        if (!showCourt && playing) stop();
+        panel.hidden = !showCourt;
+        $("feedback").hidden = showCourt;
+        $("explanationTab").setAttribute("aria-pressed", String(!showCourt));
+        $("courtTab").setAttribute("aria-pressed", String(showCourt));
+        if (!showCourt && explaining && elapsed < duration) $("pause").textContent = "再開";
+        $("quizContent").scrollTop = 0;
+      }
+      function configureDemo() {
+        stop();
+        explaining = false;
+        elapsed = 0;
+        const plan = demoPlan();
+        const animated = Boolean(plan.passes || plan.moves);
+        $("pause").hidden = !animated;
+        $("rate").hidden = !animated;
+        $("pause").disabled = false;
+        $("pause").textContent = "推奨プレーを再生";
+        $("demoCaption").hidden = false;
+        $("demoCaption").textContent = animated
+          ? "推奨例の動き。実戦では味方・相手の反応に合わせよう。"
+          : "判断図。解説で位置と判断の根拠を確認しよう。";
+        draw(1);
+      }
+      $("explanationTab").onclick = () => feedbackTab(false);
+      $("courtTab").onclick = () => feedbackTab(true);
+      $("demoChoice").onchange = () => {
+        demoIndex = Number($("demoChoice").value);
+        configureDemo();
+      };
       function syncBar() {
         $("actionbar").hidden =
           $("quiz").hidden || ($("submit").hidden && $("next").hidden);
@@ -1640,55 +1820,40 @@ breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entr
       function poolCount() {
         const n = trainingPool().length;
         $("start").disabled = !n;
+        $("start").title = "回答に応じて分岐問題が追加されることがあります。";
         $("start").textContent =
-          `開始（${Math.min(n, +$("count").value)}問／該当${n}問）`;
+          n ? `${Math.min(n, +$("count").value)}問を始める（該当${n}問）` : "条件に合う問題がありません";
       }
       for (let id of ["cat", "level", "role", "system", "count"])
         $(id).addEventListener("change", poolCount);
       $("expand").onclick = () => {
         panel.classList.add("expanded");
-        for (const node of [
-          document.querySelector("header"),
-          document.querySelector("footer"),
-          ...$("quiz").children,
-        ]) {
-          if (node !== panel) node.inert = true;
-        }
+        for (const node of outsideCourt()) node.inert = true;
         document.body.classList.add("courtOpen");
+        if (ready && stage !== "feedback") draw(1);
         $("closeCourt").focus();
       };
       $("closeCourt").onclick = () => {
         collapse();
+        if (ready && stage !== "feedback") draw(1);
         $("expand").focus();
       };
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && panel.classList.contains("expanded"))
           $("closeCourt").click();
       });
-      $("demo").onclick = () => {
-        if (stage !== "feedback" || q.rule) return;
-        stop();
-        explaining = true;
-        elapsed = 0;
-        play();
-        topOf(panel);
-      };
       $("pause").onclick = () => {
         if (playing) {
           stop();
-          $("pause").textContent = "再生";
+          $("pause").textContent = "再開";
         } else if (stage === "feedback") {
-          if (!explaining) {
+          if (!explaining || elapsed >= duration) {
             explaining = true;
             elapsed = 0;
           }
           play();
         } else if (stage === "watch") play();
       };
-      for (const id of ["break1", "break2", "break3"]) {
-        const question = byId(id);
-        question.demoMoves = { [question.you]: [0, 1] };
-      }
       home();
     </script>
   </body>
