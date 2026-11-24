@@ -1,5 +1,401 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ITS HANDBALL IQ v2.4</title><style>
-*{box-sizing:border-box}body{margin:0;background:#edf2ef;color:#183b34;font:16px system-ui,sans-serif}main{max-width:680px;margin:auto;padding:12px 12px 40px}header{background:#173c36;color:white;border-radius:20px;padding:22px}h1{font-size:30px;margin:5px 0}h2{font-size:20px;margin:10px 0}p{line-height:1.6}small,.muted{font-size:13px;color:#62756e}header small{color:#b9d9cd;letter-spacing:2px}section{background:white;border-radius:18px;padding:14px;margin:12px 0}button,select{font:inherit;color:inherit;border:1px solid #b9ccc4;background:white;border-radius:12px;padding:12px;min-height:46px;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.primary{background:#176e60;color:white;border-color:#176e60}button.selected{outline:3px solid #16836b;background:#e1f2e9}.wide{width:100%;margin:5px 0}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bar{height:6px;background:#dce7e3;border-radius:8px;overflow:hidden}.bar i{display:block;background:#16836b;height:100%}svg{display:block;width:100%;max-height:58vh;touch-action:manipulation}svg [data-target]{cursor:pointer}svg [data-target]:focus{outline:none;stroke:#ffdc64;stroke-width:.22}.score{font-size:28px;font-weight:800}.feedback{background:#edf5f0;padding:12px;border-radius:12px} [hidden]{display:none!important}label{display:block;margin:10px 0 4px}select{width:100%}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:8px 3px;border-bottom:1px solid #dce7e3}button:focus-visible{outline:3px solid #b87915} .legend{font-size:12px;text-align:center} .expanded{position:fixed;inset:0;background:#edf2ef;z-index:8;display:flex;flex-direction:column;justify-content:center;padding:8px}.expanded svg{max-height:85vh}.expanded button{position:absolute;top:8px;right:8px} @media(max-width:480px){main{padding:6px 6px 25px}section{padding:10px}button{min-height:48px}#court svg{max-height:65vh}} main{padding-bottom:110px!important}#actionbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,680px);z-index:6;background:white;padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -3px 16px #183b3422}#actionbar button{margin:0}#courtPanel.expanded{overflow:auto;justify-content:flex-start}#courtPanel.expanded svg{max-height:65dvh}#courtPanel.expanded button{position:static}#courtPanel.expanded #closeCourt{display:block}#closeCourt{display:none}#courtPanel{scroll-margin-top:8px}#viewControls>*{min-width:0}#quiz.feedbackMode #choices,#quiz.feedbackMode #reasons{display:none}#courtPanel .row button{font-size:13px;padding:8px}#courtPanel .row select{font-size:13px;padding:8px}#courtPanel svg{max-height:48dvh} </style></head><body><main><header><small>ITS U-15 / PLAYER DEVELOPMENT</small><h1>HANDBALL IQ</h1>見る・考える・判断する <small> / v2.4</small></header><section id="home"><h2>今日のトレーニング</h2><p>1日5分。動きを観察し、次のプレーとその理由を選ぼう。</p><div class="grid"><div><label for="cat">カテゴリー</label><select id="cat"></select></div><div><label for="level">難易度</label><select id="level"><option>すべて</option><option>初級</option><option>中級</option><option>上級</option></select></div><div><label for="role">ポジション</label><select id="role"><option>すべて</option><option>CP</option><option>GK</option></select></div><div><label for="count">問題数</label><select id="count"><option>5</option><option>10</option><option>20</option><option value="999">全問</option></select></div></div><label for="system">DFシステム</label><select id="system"><option>すべて</option><option>0-6</option><option>5-1</option><option>3-2-1</option><option>4-2</option></select><label for="mode">モード</label><select id="mode"><option value="study">学習（時間非表示）</option><option value="speed">判断スピード（時間表示）</option></select><button class="primary wide" id="start">トレーニング開始</button><button class="wide" id="review">苦手問題を復習</button><button class="wide" id="resume" hidden>途中から再開</button><button class="wide" id="history">学習記録</button><div class="row"><button id="export">記録保存</button><button id="import">記録復元</button></div><input type="file" id="backup" accept=".json,application/json" hidden><label><input type="checkbox" id="mirror" checked> 左右反転出題（方向表現のない問題のみ）</label><p id="notice" role="status" class="muted"></p></section><section id="quiz" hidden><div class="row"><strong id="progress"></strong><span id="clock" style="text-align:right"></span></div><div class="bar"><i id="bar"></i></div><p class="muted" id="meta"></p><h2 id="prompt"></h2><div id="courtPanel"><div id="court"></div><button id="closeCourt" class="wide">拡大を閉じる</button><div class="row" id="viewControls"><button id="expand">コート拡大</button><select id="rate" aria-label="再生速度"><option value="0.5">0.5倍</option><option value="1" selected>1倍</option><option value="1.5">1.5倍</option></select></div><div class="legend">青：自チーム　赤：相手　橙：ボール　緑の輪：自分</div><div class="row"><button id="replay">最初から</button><button id="pause">一時停止</button><button id="skip">判断場面へ</button></div><button id="demo" class="wide" hidden>推奨プレーの解説を見る</button></div><p id="phase" role="status" class="muted"></p><div id="choices"></div><div id="reasons" hidden></div><div id="feedback" class="feedback" hidden></div><div id="actionbar" hidden><button id="submit" class="primary wide" hidden>回答を確定</button><button id="next" class="primary wide" hidden>次の問題</button></div><button id="quit" class="wide">中断してホームへ</button></section><section id="result" hidden></section><footer class="muted">ルール：一般規則の学習用。2026年度JHA規則書・大会特例は下記で確認（全条文照合未完了）。<a href="https://handball.or.jp/rule/" target="_blank" rel="noopener">競技規則原典</a>。記録はこのブラウザ内に保存。図は戦術学習用の想定場面。実際の判断は相手・味方・ルール・指導方針によって変わります。</footer></main><script>
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>ITS HANDBALL IQ v2.4</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #edf2ef;
+        color: #183b34;
+        font:
+          16px system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 680px;
+        margin: auto;
+        padding: 12px 12px 40px;
+      }
+      header {
+        background: #173c36;
+        color: white;
+        border-radius: 20px;
+        padding: 22px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 5px 0;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 10px 0;
+      }
+      p {
+        line-height: 1.6;
+      }
+      small,
+      .muted {
+        font-size: 13px;
+        color: #62756e;
+      }
+      header small {
+        color: #b9d9cd;
+        letter-spacing: 2px;
+      }
+      section {
+        background: white;
+        border-radius: 18px;
+        padding: 14px;
+        margin: 12px 0;
+      }
+      button,
+      select {
+        font: inherit;
+        color: inherit;
+        border: 1px solid #b9ccc4;
+        background: white;
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 46px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button.primary {
+        background: #176e60;
+        color: white;
+        border-color: #176e60;
+      }
+      button.selected {
+        outline: 3px solid #16836b;
+        background: #e1f2e9;
+      }
+      .wide {
+        width: 100%;
+        margin: 5px 0;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .bar {
+        height: 6px;
+        background: #dce7e3;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        background: #16836b;
+        height: 100%;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        max-height: 58vh;
+        touch-action: manipulation;
+      }
+      svg [data-target] {
+        cursor: pointer;
+      }
+      svg [data-target]:focus {
+        outline: none;
+        stroke: #ffdc64;
+        stroke-width: 0.22;
+      }
+      .score {
+        font-size: 28px;
+        font-weight: 800;
+      }
+      .feedback {
+        background: #edf5f0;
+        padding: 12px;
+        border-radius: 12px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      label {
+        display: block;
+        margin: 10px 0 4px;
+      }
+      select {
+        width: 100%;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 8px 3px;
+        border-bottom: 1px solid #dce7e3;
+      }
+      button:focus-visible {
+        outline: 3px solid #b87915;
+      }
+      .legend {
+        font-size: 12px;
+        text-align: center;
+      }
+      .expanded {
+        position: fixed;
+        inset: 0;
+        background: #edf2ef;
+        z-index: 8;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 8px;
+      }
+      .expanded svg {
+        max-height: 85vh;
+      }
+      .expanded button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+      }
+      @media (max-width: 480px) {
+        main {
+          padding: 6px 6px 25px;
+        }
+        section {
+          padding: 10px;
+        }
+        button {
+          min-height: 48px;
+        }
+        #court svg {
+          max-height: 65vh;
+        }
+      }
+      main {
+        padding-bottom: calc(88px + env(safe-area-inset-bottom));
+      }
+      .grid > * {
+        min-width: 0;
+      }
+      #saveStatus:empty {
+        display: none;
+      }
+      body.courtOpen {
+        overflow: hidden;
+      }
+      #courtPanel.expanded {
+        padding: max(8px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      #courtPanel.expanded > * {
+        flex-shrink: 0;
+      }
+      #actionbar {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(100%, 680px);
+        z-index: 6;
+        background: white;
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+        box-shadow: 0 -3px 16px #183b3422;
+      }
+      #actionbar button {
+        margin: 0;
+      }
+      #courtPanel.expanded {
+        overflow: auto;
+        justify-content: flex-start;
+      }
+      #courtPanel.expanded svg {
+        max-height: 65dvh;
+      }
+      #courtPanel.expanded button {
+        position: static;
+      }
+      #courtPanel.expanded #closeCourt {
+        display: block;
+      }
+      #courtPanel.expanded #expand {
+        display: none;
+      }
+      #closeCourt {
+        display: none;
+      }
+      #courtPanel {
+        scroll-margin-top: 8px;
+      }
+      #viewControls > * {
+        min-width: 0;
+      }
+      #quiz.feedbackMode #choices,
+      #quiz.feedbackMode #reasons {
+        display: none;
+      }
+      #courtPanel .row button {
+        font-size: 13px;
+        padding: 8px;
+      }
+      #courtPanel .row select {
+        font-size: 13px;
+        padding: 8px;
+      }
+      #courtPanel svg {
+        max-height: 48vh;
+        max-height: 48dvh;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <small>ITS U-15 / PLAYER DEVELOPMENT</small>
+        <h1>HANDBALL IQ</h1>
+        見る・考える・判断する <small> / v2.4</small>
+      </header>
+      <section id="home">
+        <h2>今日のトレーニング</h2>
+        <p>
+          1日5分。動きを観察し、次のプレーとその理由を選ぼう。一部の問題では、回答に応じて追加の局面が出題されます。
+        </p>
+        <div class="grid">
+          <div>
+            <label for="cat">カテゴリー</label
+            ><select id="cat"></select>
+          </div>
+          <div>
+            <label for="level">難易度</label
+            ><select id="level">
+              <option>すべて</option>
+              <option>初級</option>
+              <option>中級</option>
+              <option>上級</option>
+            </select>
+          </div>
+          <div>
+            <label for="role">ポジション</label
+            ><select id="role">
+              <option>すべて</option>
+              <option>CP</option>
+              <option>GK</option>
+            </select>
+          </div>
+          <div>
+            <label for="count">問題数</label
+            ><select id="count">
+              <option>5</option>
+              <option>10</option>
+              <option>20</option>
+              <option value="999">全問</option>
+            </select>
+          </div>
+        </div>
+        <label for="system">DFシステム</label
+        ><select id="system">
+          <option>すべて</option>
+          <option>0-6</option>
+          <option>5-1</option>
+          <option>3-2-1</option>
+          <option>4-2</option></select
+        ><label for="mode">モード</label
+        ><select id="mode">
+          <option value="study">学習（時間非表示）</option>
+          <option value="speed">判断スピード（時間表示）</option></select
+        ><button class="primary wide" id="start">トレーニング開始</button
+        ><button class="wide" id="review">苦手問題を復習</button
+        ><button class="wide" id="resume" hidden>途中から再開</button
+        ><button class="wide" id="history">学習記録</button>
+        <div class="row">
+          <button id="export">記録保存</button
+          ><button id="import">記録復元</button>
+        </div>
+        <input
+          type="file"
+          id="backup"
+          accept=".json,application/json"
+          hidden
+        /><label
+          ><input type="checkbox" id="mirror" checked />
+          左右反転出題（方向表現のない問題のみ）</label
+        >
+        <p id="notice" role="status" class="muted"></p>
+      </section>
+      <section id="quiz" hidden>
+        <div class="row">
+          <strong id="progress"></strong
+          ><span id="clock" style="text-align: right"></span>
+        </div>
+        <div class="bar"><i id="bar"></i></div>
+        <p class="muted" id="meta"></p>
+        <h2 id="prompt"></h2>
+        <div id="courtPanel">
+          <div id="court"></div>
+          <button id="closeCourt" class="wide">拡大を閉じる</button>
+          <div class="row" id="viewControls">
+            <button id="expand">コート拡大</button
+            ><select id="rate" aria-label="再生速度">
+              <option value="0.5">0.5倍</option>
+              <option value="1" selected>1倍</option>
+              <option value="1.5">1.5倍</option>
+            </select>
+          </div>
+          <div class="legend">
+            青：自チーム　赤：相手　橙：ボール　緑の輪：自分
+          </div>
+          <div class="row">
+            <button id="replay">最初から</button
+            ><button id="pause">一時停止</button
+            ><button id="skip">判断場面へ</button>
+          </div>
+          <button id="demo" class="wide" hidden>推奨プレーの解説を見る</button>
+        </div>
+        <p id="saveStatus" class="muted" role="status"></p>
+        <p id="phase" role="status" class="muted"></p>
+        <div id="choices"></div>
+        <div id="reasons" hidden></div>
+        <div id="feedback" class="feedback" hidden></div>
+        <div id="actionbar" hidden>
+          <button id="submit" class="primary wide" hidden>回答を確定</button
+          ><button id="next" class="primary wide" hidden>次の問題</button>
+        </div>
+        <button id="quit" class="wide">中断してホームへ</button>
+      </section>
+      <section id="result" hidden></section>
+      <footer class="muted">
+        一般競技規則はJHA
+        2026年度版を参照。大会での適用条件は主催者の要項を確認してください。<a
+          href="https://handball.or.jp/rule/doc/2026competition_rule.pdf"
+          target="_blank"
+          rel="noopener"
+          >競技規則原典</a
+        >。記録はこのブラウザ内に保存。図は戦術学習用の想定場面。実際の判断は相手・味方・ルール・指導方針によって変わります。
+      </footer>
+    </main>
+    <script>
 'use strict';const $=id=>document.getElementById(id);const P=(id,x,y,dx=0,dy=0)=>({id,x,y,dx,dy});const A=(label,score,target=null)=>({label,score,target});const T=(x,y)=>[x,y];
 // Coordinates in metres, own attack upwards unless explicitly reversed.
 const Q=[];function add(id,cat,level,role,prompt,players,ball,you,opts,reason,why,extra={}){Q.push({id,cat,level,role,prompt,players,ball,you,opts,reason,why,...extra})}
@@ -19,7 +415,7 @@ add('q12',H,'上級','CP','相手が交差した。味方とどう対応する�
 // Additional scenarios: distinct tactical cues, stable IDs.
 const more=[
 [O,'中級','CP','DFが中央を閉じた。空いた側は？', [P('B1',10,13),P('R1',10,9,-2,1)],'B1','B1','右の空間','後方で再判断','左の密集',T(14,9),T(10,15),T(7,9),'DFが左へ移動した'],
-[O,'上級','CP','サイドの角度が狭くなった。次は？',[P('B1',18,8),P('B2',14,12),P('R1',16,8,2,0)],'B1','B1','バックへ戻す','外で保持し再判断','狭い角度へ強行','B2',T(19,10),T(17,6),'守備が寄りシュート角度が狭い'],
+[O,'上級','CP','サイドの角度が狭くなった。次は？',[P('B1',18,8),P('B2',14,12),P('R1',16,8,.7,0)],'B1','B1','バックへ戻す','外で保持し再判断','狭い角度へ強行','B2',T(19,10),T(17,6),'守備が寄りシュート角度が狭い'],
 [G,'中級','CP','ポストに守備が寄った。次のパス先は？',[P('B1',10,14),P('B2',12,7),P('B3',17,10),P('R1',10,8,2,0),P('R2',14,8,-1,0)],'B1','B1','右の味方','後方で再判断','密集したポスト','B3',T(10,16),'B2','ポスト周辺に守備が集中した'],
 [G,'上級','CP','クロス後、守備が二人とも味方へ寄った。どこへ？',[P('B1',6,14,6,-1),P('B2',14,14,-6,0),P('R1',8,9,0,2),P('R2',12,9,-3,2)],'B1','B1','右の空間へ','味方へ戻す','守備の密集へ',T(15,9),'B2',T(8,10),'交差後に右の間隔が広がった'],
 [F,'初級','CP','守備が右に偏った。展開先は？',[P('B1',10,14),P('B2',3,10),P('B3',17,10),P('R1',10,9,3,0),P('R2',16,8)],'B1','B1','左へ','中央で再判断','右へ','B2',T(10,16),'B3','逆側の幅が使える'],
@@ -41,7 +437,7 @@ const upgrades=[["2対1の終盤。ボール保持者として次のプレーを
 Q.forEach((q,i)=>{const u=upgrades[i];q.prompt=u[0];q.opts.push(A(u[10],+u[11]));q.opts.forEach((o,j)=>{o.reasons=u.slice(j===3?12:1+j*3,j===3?15:4+j*3)});});
 
 const DT='DF・チーム戦術', RULE='競技ルール';
-// 易しすぎる単独対人問題を除外する。既存IDは履歴互換のため維持しない。
+// 易しすぎる単独対人問題を除外する。公開済みの出題IDは変更しない。
 for(let i=Q.length-1;i>=0;i--)if(Q[i].players.filter(p=>p.id!=='BK').length<=2)Q.splice(i,1);
 const formations={'0-6':[[2,4.5],[5,6.7],[8,7],[12,7],[15,6.7],[18,4.5]],'5-1':[[2,4.5],[5,6.7],[9,7],[14,7],[18,4.5],[10,11]],'3-2-1':[[3,5.5],[10,7],[17,5.5],[6,10],[14,10],[10,13]],'4-2':[[2,4.5],[7,7],[13,7],[18,4.5],[6,11],[14,11]]};
 const attack={LW:[1,8],LB:[5,15],CB:[10,16],RB:[15,15],RW:[19,8],PV:[11,7]};
@@ -54,50 +450,1246 @@ const breakdown=[
 ['3-2-1','D2','RB','CB','中間DFがRBへ出て、CBがその内側に入り直す。','中央でCBを受け止め中間DFと連携','半歩前でパスを牽制する','PVだけを追う','RWへ先に移動する','後方中央の突破経路を優先できる','パスを遅らせられるが背後の管理が必要','CBの侵入への対応が遅れる','中央の守備が薄くなる'],
 ['4-2','D3','LB','RB','前方DFが左に偏り、RBへボールが移る。PVが右中央へ移動する。','RBの進路とPVを見ながら中央をカバー','前方DFにRBを任せPVを維持','RWへのパスを先に遮断','左側の前方DFへ寄る','中央の二つの攻撃経路に備えられる','前方DFが戻れる場合に有効','外へのパスは抑えるが中央が空く','逆側への移動でボール側が薄くなる']];
 breakdown.forEach((a,i)=>{let [sys,you,from,to,prompt,...v]=a;let ps=Object.entries(attack).map(([n,xy])=>P('R'+n,...xy,n===to?0:0,n===to?-3:0));formations[sys].forEach((xy,j)=>ps.push(P('BD'+(j+1),...xy,j===0?0:.35,j===2?.7:0)));ps.push(P('BK',10,1.5));let opts=v.slice(0,4).map((label,j)=>({...A(label,[3,2,1,0][j]),reasons:[v[4+j], '保持者への対応よりも元の担当位置を維持することを優先する', '次のパスを予測し、現在の突破への対応を後回しにする']}));add('break'+i,DT,'上級','CP',sys+'DF｜'+prompt,ps,'R'+from,'B'+you,opts,v[4],v[4],{def:true,system:sys,passTo:'R'+to});});
-const ruleRows=[["捕球後、ドリブルせず4歩目を踏んだ。判定は？", "相手のフリースロー", "そのまま続行", "7mスロー", "スローイン", "保持したまま許される歩数は最大3歩。", "7:3"], ["空中でパスを受け、両足同時に着地した。2025年改正後の歩数は？", "着地は0歩", "着地は1歩", "着地は2歩", "必ず反則", "空中捕球後の最初の片足または両足同時の接地は歩数に数えない。", "7:3"], ["ボールを持ったまま4秒間停止した。", "相手のフリースロー", "警告のみ", "7mスロー", "続行", "保持時間は原則3秒以内。", "7:2"], ["ドリブルを終え両手で保持し、そのまま再びドリブルした。", "相手のフリースロー", "続行", "スローイン", "GKスロー", "保持後の再ドリブルは認められない。", "7:4"], ["OFがボールを持って6mラインを踏んだ。", "GKスロー", "7mスロー", "OFのフリースロー", "続行", "6mラインはゴールエリアに含まれる。", "6:2"], ["OFがエリア外から跳び、空中でリリースし着地した。相手への不利益はない。", "合法", "必ずGKスロー", "必ず7mスロー", "必ず退場", "リリース後の侵入で相手に不利益がなければ罰しない。", "6:3"], ["DFがゴールエリアに侵入して明白な得点機会を阻止した。", "7mスロー", "GKスロー", "スローイン", "続行", "エリア侵入で明白な得点機会を妨げた場合は7m。", "6:2c"], ["DFのコートプレーヤーが最後に触れ、ボールが自陣のゴール外側ラインを越えた。", "相手のスローイン", "GKスロー", "7mスロー", "スローオフ", "守備側CPが最後に触った場合はスローイン。", "11:1"], ["GKがセーブし、ボールが自陣ゴール外側ラインを越えた。", "GKスロー", "相手のスローイン", "7mスロー", "相手のフリースロー", "GKが最後に触れた場合はGKスロー。", "12:1"], ["スローイン時、投げ手の足の位置は？", "片足をサイドライン上に置く", "両足をコート外に置く", "両足をライン上に置く必要がある", "足の位置は自由", "ボールが手を離れるまで片足をライン上に置く。", "11:4"], ["7mスローでGKが制限ラインを越えた後、シュートが外れた。投げ手に違反はない。", "7mスローをやり直す", "GKスロー", "得点を認める", "投げ手が退場", "リリース前にGKが4mラインを越え、得点しなかった場合は再投。", "14:9"], ["交代選手が先にコートへ入り、交代相手はまだコート内にいる。", "交代違反で2分間退場", "警告だけ", "7mスロー", "違反なし", "交代する選手が退出してから入る。", "4:4-5"], ["同じ選手が3回目の2分間退場を受けた。", "失格", "警告に変更", "次の試合までプレー不可と自動決定", "そのまま復帰", "3回目の退場は失格となる。", "16:6"], ["GKがエリア外でボールを保持した。適用される規則は？", "コートプレーヤーと同じ", "歩数制限なし", "足で自由に扱える", "3秒制限なし", "エリア外ではCPの規則が適用される。", "5:3"], ["GKがエリア内で保持したボールを持ったままエリア外へ出た。", "相手のフリースロー（GKスロー実施前なら原則やり直し）", "常に続行", "7mスロー", "スローイン", "GKスローの実施状況によって再開方法が異なる。", "5:6"], ["相手の腕をつかんで動きを止める守備は？", "反則", "正当な身体接触", "ボールに触れれば合法", "正面なら常に合法", "腕や身体をつかんで拘束することはできない。", "8:2"], ["ボール全体がゴールラインを越えた。攻撃側の反則はない。", "得点", "ボールの半分だけで得点", "GKが触れたら無効", "審判の笛がなければ常に無効", "ボール全体がラインを越えることが得点の条件。", "9:1"], ["IHF標準規則でパッシブ予告後、例外がない場合の最大パス数は？", "4回", "6回", "3回", "制限なし", "標準は4回。国内の年代別特例や再開時の例外を確認する。", "7:12"], ["7mスローが静止したGKの頭に直接当たった。GKは頭をボールへ動かしていない。2025年改正の罰則は？", "2分間退場", "必ず失格", "警告のみ", "罰則なし", "該当する頭部への直撃は改正後2分間退場。", "8:8d"], ["コート外の床に足をつけたままインプレーのボールに触れた。", "相手のフリースロー", "続行", "7mスロー", "GKスロー", "身体の一部がコート外の床に接触した状態でボールに触れることは禁止。", "7:10"]];
-ruleRows.push(['相手の明白な得点機会を不正に阻止した。再開は？','7mスロー','スローイン','スローオフ','GKスロー','明白な得点機会の不正な阻止は7mスロー。罰則は別に判断する。','14:1'],['フリースローの相手選手は原則どれだけ離れる？','3m','1m','2m','5m','原則3m。ただし自陣ゴールエリアライン直前での例外がある。','13:8'],['大会ごとに異なる試合時間や使用球を確認するには？','当該大会の要項・適用規則','前回大会の記憶だけ','相手チームの練習方法','国際大会の映像だけ','年代別・大会別の適用条件は主催者の要項で確認する。','大会要項']);
-ruleRows.forEach((r,i)=>{let opts=r.slice(1,5).map((v,j)=>A(v,j===0?3:0));add('rule'+(i+1),RULE,i<7?'初級':'中級','共通',r[0],[],null,null,opts,'',r[5]+'（IHF '+r[6]+'）',{rule:true});});
+      // Match the observed movement to the cues already stated in these prompts.
+      const observationMoves = {
+        t1: { BCB: [-2, -2] },
+        t2: { RPV: [1, 1.5] },
+        break0: { BD3: [-2, 2] },
+        break1: { BD6: [0, 2] },
+        break2: { BD2: [-0.6, 0], BD5: [0.5, 2], BD6: [-2, 0] },
+        break3: { BD5: [-1, 1], BD6: [-3, 0], RPV: [2, 2.2] },
+      };
+      for (const [id, moves] of Object.entries(observationMoves)) {
+        for (const player of Q.find((question) => question.id === id).players) {
+          if (moves[player.id]) [player.dx, player.dy] = moves[player.id];
+        }
+      }
+      const ruleRows = [
+        [
+          "捕球後、ドリブルせず4歩目を踏んだ。判定は？",
+          "相手のフリースロー",
+          "そのまま続行",
+          "7mスロー",
+          "スローイン",
+          "保持したまま許される歩数は最大3歩。",
+          "7:3",
+        ],
+        [
+          "空中でパスを受け、両足同時に着地した。着地は何歩と数える？",
+          "着地は0歩",
+          "着地は1歩",
+          "着地は2歩",
+          "必ず反則",
+          "空中捕球後の最初の片足または両足同時の接地は歩数に数えない。",
+          "7:3",
+        ],
+        [
+          "ボールを持ったまま4秒間停止した。",
+          "相手のフリースロー",
+          "警告のみ",
+          "7mスロー",
+          "続行",
+          "保持時間は原則3秒以内。",
+          "7:2",
+        ],
+        [
+          "ドリブルを終え両手で保持し、そのまま再びドリブルした。",
+          "相手のフリースロー",
+          "続行",
+          "スローイン",
+          "GKスロー",
+          "保持後の再ドリブルは認められない。",
+          "7:4",
+        ],
+        [
+          "OFがボールを持って6mラインを踏んだ。",
+          "GKスロー",
+          "7mスロー",
+          "OFのフリースロー",
+          "続行",
+          "6mラインはゴールエリアに含まれる。",
+          "6:2",
+        ],
+        [
+          "OFがエリア外から跳び、空中でリリースし着地した。相手への不利益はない。",
+          "合法",
+          "必ずGKスロー",
+          "必ず7mスロー",
+          "必ず退場",
+          "リリース後の侵入で相手に不利益がなければ罰しない。",
+          "6:3",
+        ],
+        [
+          "DFがゴールエリアに侵入して明白な得点機会を阻止した。",
+          "7mスロー",
+          "GKスロー",
+          "スローイン",
+          "続行",
+          "エリア侵入で明白な得点機会を妨げた場合は7m。",
+          "6:2c",
+        ],
+        [
+          "DFのコートプレーヤーが最後に触れ、ボールが自陣のゴール外側ラインを越えた。",
+          "相手のスローイン",
+          "GKスロー",
+          "7mスロー",
+          "スローオフ",
+          "守備側CPが最後に触った場合はスローイン。",
+          "11:1",
+        ],
+        [
+          "GKがセーブし、ボールが自陣ゴール外側ラインを越えた。",
+          "GKスロー",
+          "相手のスローイン",
+          "7mスロー",
+          "相手のフリースロー",
+          "GKが最後に触れた場合はGKスロー。",
+          "12:1",
+        ],
+        [
+          "スローイン時、投げ手の足の位置は？",
+          "片足をサイドライン上に置く",
+          "両足をコート外に置く",
+          "両足をライン上に置く必要がある",
+          "足の位置は自由",
+          "ボールが手を離れるまで片足をライン上に置く。",
+          "11:4",
+        ],
+        [
+          "7mスローでボールが投げ手の手を離れる前にGKが4mラインを越え、得点にならなかった。投げ手に違反はない。",
+          "7mスローをやり直す",
+          "GKスロー",
+          "得点を認める",
+          "投げ手が退場",
+          "リリース前にGKが4mラインを越え、得点しなかった場合は再投。",
+          "14:9",
+        ],
+        [
+          "交代選手が先にコートへ入り、交代相手はまだコート内にいる。",
+          "交代違反で2分間退場",
+          "警告だけ",
+          "7mスロー",
+          "違反なし",
+          "交代する選手が退出してから入る。",
+          "4:4-5",
+        ],
+        [
+          "同じ選手が3回目の2分間退場を受けた。",
+          "失格",
+          "警告に変更",
+          "次の試合までプレー不可と自動決定",
+          "そのまま復帰",
+          "3回目の退場は失格となる。",
+          "16:6",
+        ],
+        [
+          "GKがエリア外でボールを保持した。適用される規則は？",
+          "コートプレーヤーと同じ",
+          "歩数制限なし",
+          "足で自由に扱える",
+          "3秒制限なし",
+          "エリア外ではCPの規則が適用される。",
+          "5:3",
+        ],
+        [
+          "審判がGKスローの実施を笛で合図した後、GKが保持したボールを持ってエリア外へ出た。GKはボールを保持し続けている。",
+          "相手のフリースロー",
+          "常に続行",
+          "7mスロー",
+          "スローイン",
+          "実施の笛があった場合は相手のフリースロー。笛がなければ原則GKスローを再度行う。保持を失った場合はアドバンテージを考慮する。",
+          "5:6",
+        ],
+        [
+          "相手の腕をつかんで動きを止める守備は？",
+          "反則",
+          "正当な身体接触",
+          "ボールに触れれば合法",
+          "正面なら常に合法",
+          "腕や身体をつかんで拘束することはできない。",
+          "8:2",
+        ],
+        [
+          "シュートでボール全体が両ポストの間のゴールラインを越えた。攻撃側の反則はなく、競技も中断されていない。",
+          "得点",
+          "ボールの半分だけで得点",
+          "GKが触れたら無効",
+          "審判の笛がなければ常に無効",
+          "ボール全体がラインを越えることが得点の条件。",
+          "9:1",
+        ],
+        [
+          "IHF標準規則でパッシブ予告後、例外がない場合の最大パス数は？",
+          "4回",
+          "6回",
+          "3回",
+          "制限なし",
+          "標準は4回。国内の年代別特例や再開時の例外を確認する。",
+          "7:12",
+        ],
+        [
+          "7mスローが静止したGKの頭に直接当たった。GKは頭をボールへ動かしていない。罰則は？",
+          "2分間退場",
+          "必ず失格",
+          "警告のみ",
+          "罰則なし",
+          "該当する頭部への直撃は2分間退場。",
+          "8:8d",
+        ],
+        [
+          "コート外の床に足をつけたままインプレーのボールに触れた。",
+          "相手のフリースロー",
+          "続行",
+          "7mスロー",
+          "GKスロー",
+          "身体の一部がコート外の床に接触した状態でボールに触れることは禁止。",
+          "7:10",
+        ],
+      ];
+      ruleRows.push(
+        [
+          "相手の明白な得点機会を不正に阻止した。再開は？",
+          "7mスロー",
+          "スローイン",
+          "スローオフ",
+          "GKスロー",
+          "明白な得点機会の不正な阻止は7mスロー。罰則は別に判断する。",
+          "14:1",
+        ],
+        [
+          "フリースローの相手選手は原則どれだけ離れる？",
+          "3m",
+          "1m",
+          "2m",
+          "5m",
+          "原則3m以上。守備側のフリースローラインのすぐ外から実施する場合、守備側は自陣ゴールエリアラインの外側に沿って立てる。",
+          "13:8",
+        ],
+        [
+          "大会ごとに異なる試合時間や使用球を確認するには？",
+          "当該大会の要項・適用規則",
+          "前回大会の記憶だけ",
+          "相手チームの練習方法",
+          "国際大会の映像だけ",
+          "年代別・大会別の適用条件は主催者の要項で確認する。",
+          "大会要項",
+        ],
+      );
+      ruleRows.forEach((r, i) => {
+        let opts = r.slice(1, 5).map((v, j) => A(v, j === 0 ? 3 : 0));
+        add(
+          "rule" + (i + 1),
+          RULE,
+          i < 7 ? "初級" : "中級",
+          "共通",
+          r[0],
+          [],
+          null,
+          null,
+          opts,
+          "",
+          r[5] +
+            (r[6] === "大会要項"
+              ? "（大会要項）"
+              : "（JHA 2026年度版 " + r[6] + "）"),
+          { rule: true },
+        );
+      });
 
-const cats=['すべて',...new Set(Q.map(q=>q.cat))];$('cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');const key='itsIQv23';let db={records:[],session:null};try{let d=JSON.parse(localStorage.getItem(key));if(d&&Array.isArray(d.records))db=d}catch{}function save(){try{localStorage.setItem(key,JSON.stringify(db));return true}catch{$('notice').textContent='保存できません。ブラウザの設定を確認してください。';return false}}const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};let s,q,raf=0,playing=false,elapsed=0,last=0,ready=false,selected=-1,reason=-1,started=0,active=0,stage='watch';const duration=2200;const byId=id=>Q.find(q=>q.id===id);function stop(){cancelAnimationFrame(raf);playing=false}function screen(id){for(let x of ['home','quiz','result'])$(x).hidden=x!==id}function home(){stop();explaining=false;$('court').classList.remove('expanded');ready=false;stage='watch';screen('home');$('resume').hidden=!db.session;$('review').disabled=!weak().length;$('notice').textContent=`収録 ${Q.length}問 ／ 回答記録 ${db.records.length}件`;try{localStorage.setItem(key,JSON.stringify(db))}catch{$('notice').textContent+=' ／ 保存不可'}}function weak(){let m=new Map;db.records.forEach(r=>{if(!m.has(r.id))m.set(r.id,[]);m.get(r.id).push(r)});return [...m].filter(([id,a])=>a.some(r=>r.score<3||r.reason===false)&&!(a.length>=2&&a.slice(-2).every(r=>r.score===3&&r.reason!==false))).map(([id])=>id).filter(byId)}function start(review=false){let pool=review?weak().map(byId):Q.filter(q=>['すべて',q.cat].includes($('cat').value)&&['すべて',q.level].includes($('level').value)&&(['すべて',q.role].includes($('role').value)||q.rule)&&($('system').value==='すべて'||q.system===$('system').value));if(!pool.length){$('notice').textContent='条件に合う問題がありません。';return}if(db.session&&!confirm('中断中のトレーニングを置き換えますか？'))return;s={ids:shuffle(pool.map(q=>q.id)).slice(0,+$('count').value),pos:0,answers:[],mode:$('mode').value,mirror:$('mirror').checked};db.session=s;save();show()}
-function path(r){return r===6?'M2.5 0 A6 6 0 0 0 8.5 6 H11.5 A6 6 0 0 0 17.5 0':`M0 ${Math.sqrt(r*r-8.5*8.5)} A${r} ${r} 0 0 0 8.5 ${r} H11.5 A${r} ${r} 0 0 0 20 ${Math.sqrt(r*r-8.5*8.5)}`}
-function endCourt(){return `<path d="${path(6)} Z" fill="#a9c8c4" stroke="white" stroke-width=".09"/><path d="${path(9)}" fill="none" stroke="white" stroke-width=".09" stroke-dasharray=".15 .15"/><path d="M9.5 7 H10.5 M9.925 4 H10.075" stroke="white" stroke-width=".09"/><rect x="8.5" y="-.45" width="3" height=".45" fill="#455b59" stroke="white" stroke-width=".07"/>`}
-let mirrored=false, explaining=false;function pos(p,t){let u=Math.max(0,Math.min(1,(t-(p.id===q.ball?0:.12))/(p.id===q.ball?.78:.88)));let x=p.x+p.dx*u,y=p.y+p.dy*u;return [mirrored?20-x:x,y]}function target(o,t){return typeof o.target==='string'?pos(q.players.find(p=>p.id===o.target),t):(o.target&&mirrored?[20-o.target[0],o.target[1]]:o.target)}function draw(t){if(q.rule){$('court').innerHTML='';return}let h=q.full?40:20;let g=`<svg viewBox="-.6 -.7 21.2 ${h+1.4}" role="group" aria-label="ハンドボールコート"><rect width="20" height="${h}" fill="#e7d6b6" stroke="white" stroke-width=".1"/>${endCourt()}${q.full?`<g transform="translate(20 40) rotate(180)">${endCourt()}</g><path d="M0 20 H20" stroke="white" stroke-width=".1"/>`:''}<text x="10" y="${q.full?20:19.4}" font-size=".55" text-anchor="middle" fill="#36544d">${q.down?'攻撃方向 ↓':q.def?'相手の攻撃方向 ↑':'自チーム攻撃方向 ↑'}</text>`;for(let p of q.players){let [x,y]=pos(p,t),blue=p.id[0]==='B',col=blue?'#236b9c':'#b74d51',angle=(blue?(q.def?180:q.down&&q.cat===K?180:0):(q.def?0:q.down?180:180));g+=`<g transform="translate(${x} ${y})"><circle r=".86" fill="${p.id===q.you?'#e1f5d9':'none'}" stroke="${p.id===q.you?'#16836b':'none'}" stroke-width=".15"/><g transform="rotate(${angle})"><ellipse cy=".1" rx=".64" ry=".39" fill="${col}" stroke="white" stroke-width=".08"/><path d="M-.55 .05 L-.8 -.28 M.55 .05 L.8 -.28" stroke="${col}" stroke-width=".22" stroke-linecap="round"/><circle cy="-.35" r=".26" fill="#e9bc96" stroke="white" stroke-width=".05"/></g><text y=".95" font-size=".48" text-anchor="middle" fill="#173c36">${p.id===q.you?'YOU':p.id.endsWith('K')?'GK':p.id.slice(1)}</text></g>`;}let bp=q.players.find(p=>p.id===q.ball),ep=q.players.find(p=>p.id===(explaining?null:q.passTo));if(bp){let [x,y]=pos(bp,t);if(ep){let z=Math.max(0,Math.min(1,(t-.22)/.4)),a=pos(bp,.22),b=pos(ep,t);x=a[0]+(b[0]-a[0])*z;y=a[1]+(b[1]-a[1])*z;}g+=`<circle cx="${x+.45}" cy="${y-.35}" r=".26" fill="#f39a20" stroke="#81511d" stroke-width=".07"/>`;}if(explaining){let o=q.opts.reduce((a,b)=>a.score>=b.score?a:b),p=q.players.find(p=>p.id===q.you),v=target(o,1);if(p&&v){let a=pos(p,1);g+=`<path d="M${a.join(' ')} L${v.join(' ')}" stroke="#16836b" stroke-width=".22" stroke-dasharray=".35 .2"/><circle cx="${v[0]}" cy="${v[1]}" r=".8" fill="none" stroke="#16836b" stroke-width=".2"/>`;}}if(ready&&stage!=='feedback')q.opts.forEach((o,i)=>{if(!o.target)return;let [x,y]=target(o,t);if(q.opts.some((other,j)=>j!==i&&other.target&&Math.hypot(...target(other,t).map((v,k)=>v-[x,y][k]))<1.88))return;g+=`<circle data-target="${i}" tabindex="0" role="button" aria-label="${o.label}" cx="${x}" cy="${y}" r=".94" fill="${selected===i?'#16836b':'#fff'}" fill-opacity="${selected===i?.28:.06}" stroke="${selected===i?'#16836b':'#425e56'}" stroke-width=".12" stroke-dasharray=".2 .15"/>`});$('court').innerHTML=g+'</svg>';if(ready)$('court').querySelectorAll('[data-target]').forEach(e=>{e.onclick=()=>choose(+e.dataset.target);e.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();choose(+e.dataset.target)}}})}
-function tick(now){if(!playing)return;if(!last)last=now;elapsed+=Math.min(now-last,100)*Number($('rate').value);last=now;draw(Math.min(elapsed/duration,1));if(elapsed>=duration){if(explaining){stop();explaining=false;$('demo').disabled=false;return}freeze();return}raf=requestAnimationFrame(tick)}function play(){stop();playing=true;last=0;$('pause').textContent='一時停止';raf=requestAnimationFrame(tick)}function freeze(){stop();elapsed=duration;ready=true;stage='choose';started=performance.now();$('phase').textContent='判断場面：コートまたは選択肢をタップ';$('pause').disabled=true;$('skip').disabled=true;draw(1);renderChoices()}function show(){stop();explaining=false;q=byId(s.ids[s.pos]);mirrored=!!s.mirror&&!!q&&!q.rule&&!/左|右|逆側/.test([q.prompt,q.why,q.reason,...q.opts.flatMap(o=>[o.label,...(o.reasons||[])])].join(''))&&Math.random()<.5;$('demo').hidden=true;$('viewControls').hidden=!!q?.rule;if(!q){home();return}screen('quiz');selected=reason=-1;ready=false;elapsed=active=0;stage='watch';$('progress').textContent=`${s.pos+1} / ${s.ids.length}`;$('bar').style.width=`${s.pos/s.ids.length*100}%`;document.querySelector('.legend').hidden=!!q.rule;for(let id of ['replay','pause','skip'])$(id).hidden=!!q.rule;$('meta').textContent=`${q.cat} / ${q.level} / ${q.role}`;$('prompt').textContent=q.prompt;$('clock').textContent='';for(let id of ['feedback','next','reasons','submit'])$(id).hidden=true;$('choices').replaceChildren();$('phase').textContent='選手の動きを観察しよう';$('pause').disabled=$('skip').disabled=$('replay').disabled=false;if(q.rule){freeze();$('phase').textContent='競技規則に基づいて回答しよう'}else{draw(0);play()}}
-function buttons(el,items,fn,sel){el.replaceChildren();items.forEach(([i,label])=>{let b=document.createElement('button');b.className='wide'+(i===sel?' selected':'');b.textContent=label;b.onclick=()=>fn(i);el.append(b)})}let order=[],reasonOrder=[];function renderChoices(){if(!order.length)order=shuffle(q.opts.map((_,i)=>i));buttons($('choices'),order.map(i=>[i,q.opts[i].label]),choose,selected)}function choose(i){if(!ready||stage==='feedback')return;if(selected<0){active+=started?performance.now()-started:0}if(selected!==i){reason=-1;reasonOrder=[]}selected=i;stage='reason';draw(1);renderChoices();if(q.rule){reason=0;$('submit').hidden=false;$('submit').disabled=false;return}$('reasons').hidden=false;let labels=q.opts[selected].reasons;if(!reasonOrder.length)reasonOrder=shuffle([0,1,2]);buttons($('reasons'),reasonOrder.map(i=>[i,labels[i]]),i=>{reason=i;choose(selected)},reason);let h=document.createElement('h2');h.textContent='このプレーの利点・リスクを最も正確に説明しているのは？';$('reasons').prepend(h);$('submit').hidden=false;$('submit').disabled=reason<0}
-function submit(){if(stage!=='reason'||reason<0)return;stage='feedback';let r={id:q.id,score:q.opts[selected].score,reason:q.rule?null:reason===0,sec:Math.round(active/100)/10,date:new Date().toISOString()};s.answers.push(r);db.records.push(r);db.session={...s,pos:s.pos+1};if(db.session.pos>=s.ids.length)db.session=null;save();$('feedback').hidden=false;$('feedback').innerHTML=`<strong>判断 ${r.score}/3点 ／ ${q.rule?'ルール判定':`理由 ${r.reason?'1':'0'}/1点`}</strong><p>${q.why}</p><p>推奨：${q.opts.reduce((a,b)=>a.score>=b.score?a:b).label}<br>選んだプレーの評価：${q.rule?q.why:q.opts[selected].reasons[0]}<br>推奨判断の着眼点：${q.reason}</p>`;$('submit').hidden=true;$('next').hidden=false;$('next').textContent=s.pos+1===s.ids.length?'結果を見る':'次の問題';$('replay').disabled=true;$('demo').hidden=q.rule;for(let b of document.querySelectorAll('#choices button,#reasons button'))b.disabled=true;draw(1);$('bar').style.width=`${(s.pos+1)/s.ids.length*100}%`}
-function summary(records,title){stop();screen('result');let el=$('result');el.replaceChildren();let n=records.length,avg=n?records.reduce((a,r)=>a+r.score,0)/n:0,rs=records.some(r=>r.reason!==null)?records.filter(r=>r.reason).length/records.filter(r=>r.reason!==null).length:0;el.innerHTML=`<h2>${title}</h2><div class="grid"><div>判断の質<div class="score">${avg.toFixed(1)}/3</div></div><div>理由正答率<div class="score">${records.some(r=>r.reason!==null)?Math.round(rs*100)+'%':'未測定'}</div></div><div>回答数<div class="score">${n}</div></div><div>平均判断時間<div class="score">${n?(records.reduce((a,r)=>a+r.sec,0)/n).toFixed(1):'—'}秒</div></div></div><h2>カテゴリー別</h2><table><tr><th>分野</th><th>判断平均</th><th>回答数</th></tr>${cats.slice(1).map(c=>{let a=records.filter(r=>byId(r.id)?.cat===c);return `<tr><td>${c}</td><td>${a.length?(a.reduce((s,r)=>s+r.score,0)/a.length).toFixed(1):'—'}</td><td>${a.length}</td></tr>`}).join('')}</table>`;let tactical=records.filter(r=>!byId(r.id)?.rule),rules=records.filter(r=>byId(r.id)?.rule);let avgPct=a=>a.length?Math.round(a.reduce((n,r)=>n+r.score,0)/a.length/3*100):null;let axes=['OF','DF','速攻','切り替え','GK','ゲーム管理'];let vals=axes.map(x=>avgPct(tactical.filter(r=>byId(r.id)?.cat.startsWith(x))));let pt=(i,v)=>[150+Math.sin(i*Math.PI/3)*83*v/100,115-Math.cos(i*Math.PI/3)*83*v/100].join(',');let extra=document.createElement('div');extra.innerHTML=`<h2>戦術・ルール別</h2><p>戦術 ${avgPct(tactical)??'未測定'}${tactical.length?'%':''} ／ ルール ${avgPct(rules)??'未測定'}${rules.length?'%':''}</p><svg viewBox="0 0 300 230" aria-label="戦術理解度レーダー">${[25,50,75,100].map(v=>`<polygon points="${axes.map((_,i)=>pt(i,v)).join(' ')}" fill="none" stroke="#bdcec6"/>`).join('')}${axes.map((x,i)=>{let [a,b]=pt(i,125).split(',');return `<text x="${a}" y="${b}" text-anchor="middle" font-size="10">${x}</text>${vals[i]===null?'':`<circle cx="${pt(i,vals[i]).split(',')[0]}" cy="${pt(i,vals[i]).split(',')[1]}" r="4" fill="#176e60"/>`}`}).join('')}${vals.every(v=>v!==null)?`<polygon points="${vals.map((v,i)=>pt(i,v)).join(' ')}" fill="#176e6033" stroke="#176e60"/>`:''}</svg><p class="muted">未回答分野は点を表示しません。</p><h2>DFシステム別</h2>${['0-6','5-1','3-2-1','4-2'].map(x=>`<p>${x}：${['OF','DF'].map(side=>{let v=avgPct(tactical.filter(r=>byId(r.id)?.system===x&&byId(r.id)?.cat.startsWith(side)));return side+' '+(v===null?'未測定':v+'%')}).join(' ／ ')}</p>`).join('')}<p>復習対象：${weak().length}問（誤答後、直近2回満点で定着）</p>`;el.append(extra);let b=document.createElement('button');b.className='wide primary';b.textContent='ホームへ';b.onclick=home;el.append(b)}function next(){if(stage!=='feedback')return;if(++s.pos>=s.ids.length){summary(s.answers,'トレーニング結果');return}order=[];reasonOrder=[];show()}
-$('start').onclick=()=>{order=[];reasonOrder=[];start()};$('review').onclick=()=>{order=[];reasonOrder=[];start(true)};$('resume').onclick=()=>{s=db.session;order=[];reasonOrder=[];show()};$('history').onclick=()=>summary(db.records,'学習記録');$('next').onclick=next;$('submit').onclick=submit;$('quit').onclick=home;$('skip').onclick=freeze;$('pause').onclick=()=>{if(playing){stop();$('pause').textContent='再生'}else play()};$('replay').onclick=()=>{if(stage==='feedback')return;selected=reason=-1;ready=false;elapsed=active=0;stage='watch';$('choices').replaceChildren();$('reasons').hidden=$('submit').hidden=true;$('pause').disabled=$('skip').disabled=false;$('phase').textContent='選手の動きを観察しよう';play()};document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playing){stop();$('pause').textContent='再生'}if(ready&&selected<0&&stage==='choose'&&started){active+=performance.now()-started;started=0}}else if(ready&&selected<0&&stage==='choose')started=performance.now()});setInterval(()=>{if(s?.mode==='speed'&&ready&&stage!=='feedback'&&!$('quiz').hidden)$('clock').textContent=((active+(selected<0&&started?performance.now()-started:0))/1000).toFixed(1)+'秒'},150);
-function recommendedTarget(){let o=q.opts.reduce((a,b)=>a.score>=b.score?a:b);return typeof o.target==='string'?o.target:null}
-$('demo').onclick=()=>{if(stage!=='feedback')return;explaining=true;elapsed=0;$('demo').disabled=true;play()};
-$('expand').onclick=()=>{let c=$('court');c.classList.add('expanded');let close=document.createElement('button');close.textContent='閉じる';close.onclick=()=>{c.classList.remove('expanded');close.remove()};c.append(close)};
-// Preserve close control when SVG is redrawn.
-const originalDraw=draw;draw=function(t){originalDraw(t);let c=$('court');if(c.classList.contains('expanded')){let b=document.createElement('button');b.textContent='閉じる';b.onclick=()=>{c.classList.remove('expanded');b.remove()};c.append(b)}};
-$('export').onclick=()=>{let u=URL.createObjectURL(new Blob([JSON.stringify({version:24,records:db.records},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='ITS-IQ-v24-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
-$('import').onclick=()=>$('backup').click();$('backup').onchange=async()=>{try{let f=$('backup').files[0];if(!f)return;let d=JSON.parse(await f.text());if(![23,24].includes(d.version)||!Array.isArray(d.records)||!d.records.every(r=>byId(r.id)&&Number.isInteger(r.score)&&r.score>=0&&r.score<=3&&(r.reason===null||typeof r.reason==='boolean')&&Number.isFinite(r.sec)&&r.sec>=0&&typeof r.date==='string'&&Number.isFinite(Date.parse(r.date))))throw Error();if(confirm('現在の回答記録を置き換えますか？')){db={records:d.records,session:null};save();home()}}catch{$('notice').textContent='復元できません。v2.3のバックアップを選択してください。'}finally{$('backup').value=''}};
+      // Follow-up IDs are stable, and only the selected route is added to the session.
+      const continuation = {
+        q01: ["q01-pass", "q01-carry", "q01-stop", "q01-reset"],
+      };
+      const followups = [
+        [
+          "右の味方がパスを捕球した。守備者はパスを出した選手の前に残り、受け手の前は空いている。受け手の次の判断は？",
+          [P("B1", 8, 12), P("B2", 15, 10), P("R1", 8, 11)],
+          "B1",
+          "B2",
+        ],
+        [
+          "左へ運んだところ、守備者は元の位置に残った。前方に接触せず進める空間がある。次の判断は？",
+          [P("B1", 8, 12, -3, -2), P("B2", 15, 10), P("R1", 8, 11)],
+          "B1",
+        ],
+        [
+          "守備者の正面で止まり、ボールは保持している。右の味方がフリーで、パスコースが開いた。次の判断は？",
+          [P("B1", 8, 12), P("B2", 15, 10), P("R1", 8, 11, 0, -1)],
+          "B1",
+        ],
+        [
+          "いったんプレーを落ち着かせた。守備者が右の味方へのパスコースに寄り、左前方に接触せず進める空間ができた。次の判断は？",
+          [P("B1", 8, 12, 0, 1), P("B2", 15, 10), P("R1", 8, 11, 3, 0)],
+          "B1",
+        ],
+      ];
+      const followupActions = [
+        [
+          "空いた前方へ進む",
+          "受け手の前に前進できる空間がある",
+          "元の味方へ戻す",
+          "保持を優先できるが、前進の機会を逃す",
+        ],
+        [
+          "左前方の空間へ進む",
+          "守備者と接触せずに前進できる",
+          "右の味方へ早めにパス",
+          "展開はできるが、左にある前進の機会を手放す",
+        ],
+        [
+          "右のフリーの味方へパス",
+          "守備者の正面を避けてボールを進められる",
+          "いったん後方に下がる",
+          "正面突破の危険は下がるが、開いたパスコースを使わない",
+        ],
+        [
+          "左前方の空間へ進む",
+          "守備者が右へ寄って空いた場所を利用できる",
+          "ボールを保持して味方の動きを待つ",
+          "安全を優先できるが、空間が閉じる可能性がある",
+        ],
+      ];
+      followups.forEach(([prompt, players, ball, passTo], i) => {
+        const [best, why, alt, altWhy] = followupActions[i];
+        const opts = [A(best, 3), A(alt, 2), A("守備者の正面へ進む", 0)];
+        const reasons = [
+          [
+            why,
+            "味方の位置に関係なく、必ず同じ方向へ進む必要がある",
+            "守備者が正面にいる場所を優先できる",
+          ],
+          [
+            altWhy,
+            "この選択をすれば守備者は必ずボールを奪いに来ない",
+            "空いている場所はプレーを選ぶ理由にならない",
+          ],
+          [
+            "守備者との距離を縮め、自分で進める場所が狭くなる",
+            "近い相手ほど常に簡単に抜ける",
+            "接触が起きても必ず攻撃側のボールになる",
+          ],
+        ];
+        add(
+          continuation.q01[i],
+          S,
+          "初級",
+          "CP",
+          "連続判断｜" + prompt,
+          players,
+          ball,
+          passTo || ball,
+          opts.map((o, j) => ({ ...o, reasons: reasons[j] })),
+          why,
+          why,
+          { followup: true, passTo },
+        );
+      });
+      // Each question may override its own reason prompt, choices and correct index.
+      const reasonSettings = {
+        "q01-stop": {
+          prompt: "この局面で選んだ行動の影響は？",
+          options: {
+            0: {
+              labels: [
+                "正面の守備者との距離を縮める",
+                followupActions[2][1],
+                "右の味方はパスを受けられない",
+              ],
+              correct: 1,
+            },
+          },
+        },
+      };
+      for (const item of Q) {
+        if (item.rule) continue;
+        const settings = reasonSettings[item.id];
+        item.reasonPrompt =
+          settings?.prompt ||
+          "このプレーの利点・リスクを最も正確に説明しているのは？";
+        item.opts.forEach((option, i) => {
+          const override = settings?.options[i];
+          option.reasons = override?.labels || option.reasons;
+          option.correctReason = override?.correct ?? 0;
+        });
+      }
 
-// v2.4: preserve v2.3 storage key and IDs.
-const panel=$('courtPanel');
-const baseHome=home,baseShow=show,baseSubmit=submit,baseChoose=choose,baseSummary=summary;
-function collapse(){panel.classList.remove('expanded');$('court').classList.remove('expanded')}
-function topOf(el){el.scrollIntoView({block:'start',behavior:'instant'})}
-function syncBar(){$('actionbar').hidden=$('quiz').hidden||($('submit').hidden&&$('next').hidden)}
-function poolCount(){let n=Q.filter(q=>['すべて',q.cat].includes($('cat').value)&&['すべて',q.level].includes($('level').value)&&(['すべて',q.role].includes($('role').value)||q.rule)&&($('system').value==='すべて'||q.system===$('system').value)).length;$('start').disabled=!n;$('start').textContent=`開始（${Math.min(n,+$('count').value)}問／該当${n}問）`}
-for(let id of ['cat','level','role','system','count'])$(id).addEventListener('change',poolCount);
-home=function(){collapse();baseHome();syncBar();poolCount();window.scrollTo(0,0)};
-show=function(){collapse();$('quiz').classList.remove('feedbackMode');baseShow();panel.hidden=!!q?.rule;syncBar();topOf($('quiz'))};
-choose=function(i){baseChoose(i);syncBar()};
-submit=function(){if(stage!=='reason'||reason<0)return;baseSubmit();$('quiz').classList.add('feedbackMode');$('phase').textContent='解説モード：推奨判断と着眼点を確認';$('pause').disabled=false;$('pause').textContent='再生';$('skip').disabled=true;syncBar();topOf(q.rule?$('feedback'):panel)};
-summary=function(...args){collapse();baseSummary(...args);syncBar();topOf($('result'))};
-$('submit').onclick=submit;$('quit').onclick=home;$('history').onclick=()=>summary(db.records,'学習記録');
-$('expand').onclick=()=>panel.classList.add('expanded');$('closeCourt').onclick=collapse;
-$('demo').onclick=()=>{if(stage!=='feedback'||q.rule)return;stop();explaining=true;elapsed=0;$('demo').disabled=false;play();topOf(panel)};
-$('pause').onclick=()=>{if(playing){stop();$('pause').textContent='再生'}else if(stage==='feedback'){if(!explaining){explaining=true;elapsed=0}play()}else if(stage==='watch')play()};
-const oldTick=tick;tick=function(now){oldTick(now);if(!playing&&stage==='feedback')$('pause').textContent='再生'};
-const oldReplay=$('replay').onclick;$('replay').onclick=()=>{oldReplay();syncBar()};
-// Explanation uses explicit movement only when a scenario supplies it. Otherwise show a static focus marker, never a fictitious pass.
-const priorPos=pos;pos=function(p,t){if(explaining){let a=priorPos(p,1),m=q.demoMoves?.[p.id];return m?[a[0]+(mirrored?-1:1)*m[0]*t,a[1]+m[1]*t]:a}return priorPos(p,t)};
-for(let i=0;i<4;i++){let z=byId('break'+(i+1));if(z)z.demoMoves={[z.you]:[0,1]}}
-// Retain the ball at the final observed receiver during defensive explanation.
-const baseDraw=draw;draw=function(t){baseDraw(t);if(explaining&&q.passTo){let receiver=q.players.find(p=>p.id===q.passTo),ball=$('court').querySelector('circle[fill="#f39a20"]');if(receiver&&ball){let a=pos(receiver,1);ball.setAttribute('cx',a[0]+.45);ball.setAttribute('cy',a[1]-.35)}}};
-home();
-</script></body></html>
+      const cats = ["すべて", ...new Set(Q.map((q) => q.cat))];
+      $("cat").innerHTML = cats.map((c) => `<option>${c}</option>`).join("");
+      const key = "itsIQv23";
+      let db = { records: [], session: null };
+      let storageNotice = "";
+      let storedValue;
+      const byId = (id) => Q.find((item) => item.id === id);
+      function validRecord(r) {
+        return (
+          !!r &&
+          typeof r.id === "string" &&
+          r.id.length > 0 &&
+          Number.isInteger(r.score) &&
+          r.score >= 0 &&
+          r.score <= 3 &&
+          (r.reason === null || typeof r.reason === "boolean") &&
+          Number.isFinite(r.sec) &&
+          r.sec >= 0 &&
+          typeof r.date === "string" &&
+          Number.isFinite(Date.parse(r.date))
+        );
+      }
+      function validSession(session) {
+        if (
+          !session ||
+          !Array.isArray(session.ids) ||
+          !session.ids.length ||
+          !session.ids.every(byId) ||
+          new Set(session.ids).size !== session.ids.length ||
+          !Number.isInteger(session.pos) ||
+          session.pos < 0 ||
+          session.pos >= session.ids.length ||
+          !Array.isArray(session.answers) ||
+          !["study", "speed"].includes(session.mode) ||
+          typeof session.mirror !== "boolean"
+        )
+          return false;
+        if (
+          session.branching !== undefined &&
+          typeof session.branching !== "boolean"
+        )
+          return false;
+        if (
+          session.feedback !== undefined &&
+          typeof session.feedback !== "boolean"
+        )
+          return false;
+        const item = byId(session.ids[session.pos]);
+        const draft = session.draft;
+        if (
+          draft &&
+          (typeof draft.mirrored !== "boolean" ||
+            !Number.isFinite(draft.active) ||
+            draft.active < 0 ||
+            typeof draft.ready !== "boolean" ||
+            !Number.isInteger(draft.selected) ||
+            draft.selected < -1 ||
+            draft.selected >= item.opts.length ||
+            !Number.isInteger(draft.reason) ||
+            draft.reason < -1 ||
+            draft.reason >= (item.opts[draft.selected]?.reasons?.length ?? 1) ||
+            (draft.selected < 0 && draft.reason !== -1) ||
+            (!draft.ready && draft.selected !== -1))
+        )
+          return false;
+        if (
+          session.feedback &&
+          (!draft?.ready || draft.selected < 0 || draft.reason < 0)
+        )
+          return false;
+        return (
+          session.answers.length === session.pos + Number(!!session.feedback) &&
+          session.answers.every(
+            (record, i) => validRecord(record) && record.id === session.ids[i],
+          )
+        );
+      }
+      try {
+        storedValue = localStorage.getItem(key);
+        const d = JSON.parse(storedValue);
+        if (d && Array.isArray(d.records)) {
+          db.records = d.records.filter(validRecord);
+          db.session = validSession(d.session) ? d.session : null;
+          if (
+            db.records.length !== d.records.length ||
+            (d.session && !db.session)
+          ) {
+            storageNotice = "保存データの一部を読み込めませんでした。";
+          }
+        } else if (storedValue !== null) {
+          storageNotice = "保存データを読み込めませんでした。";
+        }
+      } catch {
+        storageNotice = "保存データを読み込めませんでした。";
+      }
+      function save() {
+        try {
+          if (localStorage.getItem(key) !== storedValue) {
+            storageNotice =
+              "別のタブで記録が更新されました。このタブで行った回答を残すには、再読み込みの前にホームからバックアップしてください。";
+            $("notice").textContent = $("saveStatus").textContent =
+              storageNotice;
+            return false;
+          }
+          const serialized = JSON.stringify(db);
+          localStorage.setItem(key, serialized);
+          storedValue = serialized;
+          storageNotice = "";
+          $("saveStatus").textContent = "";
+          return true;
+        } catch {
+          storageNotice =
+            "保存できません。記録を失わないよう、ホームで記録を保存してください。";
+          $("notice").textContent = storageNotice;
+          $("saveStatus").textContent = storageNotice;
+          return false;
+        }
+      }
+      const shuffle = (a) => {
+        a = [...a];
+        for (let i = a.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      };
+      let s,
+        q,
+        raf = 0,
+        playing = false,
+        elapsed = 0,
+        last = 0,
+        ready = false,
+        selected = -1,
+        reason = -1,
+        started = 0,
+        active = 0,
+        stage = "watch";
+      const duration = 2200;
+      function stop() {
+        cancelAnimationFrame(raf);
+        playing = false;
+      }
+      function screen(id) {
+        for (let x of ["home", "quiz", "result"]) $(x).hidden = x !== id;
+      }
+      function home() {
+        collapse();
+        stop();
+        explaining = false;
+        ready = false;
+        stage = "watch";
+        screen("home");
+        $("resume").hidden = !db.session;
+        $("review").disabled = !weak().length;
+        $("notice").textContent =
+          `収録 ${Q.length}問 ／ 回答記録 ${db.records.length}件`;
+        if (storageNotice) $("notice").textContent += " ／ " + storageNotice;
+        syncBar();
+        poolCount();
+        window.scrollTo(0, 0);
+      }
+      function weak() {
+        let m = new Map();
+        db.records.forEach((r) => {
+          if (!m.has(r.id)) m.set(r.id, []);
+          m.get(r.id).push(r);
+        });
+        return [...m]
+          .filter(
+            ([id, a]) =>
+              a.some((r) => r.score < 3 || r.reason === false) &&
+              !(
+                a.length >= 2 &&
+                a.slice(-2).every((r) => r.score === 3 && r.reason !== false)
+              ),
+          )
+          .map(([id]) => id)
+          .filter(byId);
+      }
+      function start(review = false) {
+        if ($("home").hidden) return;
+        let pool = review ? weak().map(byId) : trainingPool();
+        if (!pool.length) {
+          $("notice").textContent = "条件に合う問題がありません。";
+          return;
+        }
+        if (db.session && !confirm("中断中のトレーニングを置き換えますか？"))
+          return;
+        s = {
+          branching: true,
+          ids: shuffle(pool.map((q) => q.id)).slice(0, +$("count").value),
+          pos: 0,
+          answers: [],
+          mode: $("mode").value,
+          mirror: $("mirror").checked,
+        };
+        db.session = s;
+        show();
+      }
+      function remember() {
+        s.draft = { selected, reason, active, mirrored, ready };
+        db.session = s;
+        save();
+      }
+      function path(r) {
+        return r === 6
+          ? "M2.5 0 A6 6 0 0 0 8.5 6 H11.5 A6 6 0 0 0 17.5 0"
+          : `M0 ${Math.sqrt(r * r - 8.5 * 8.5)} A${r} ${r} 0 0 0 8.5 ${r} H11.5 A${r} ${r} 0 0 0 20 ${Math.sqrt(r * r - 8.5 * 8.5)}`;
+      }
+      function endCourt() {
+        return `<path d="${path(6)} Z" fill="#a9c8c4" stroke="white" stroke-width=".09"/><path d="${path(9)}" fill="none" stroke="white" stroke-width=".09" stroke-dasharray=".15 .15"/><path d="M9.5 7 H10.5 M9.925 4 H10.075" stroke="white" stroke-width=".09"/><rect x="8.5" y="-.45" width="3" height=".45" fill="#455b59" stroke="white" stroke-width=".07"/>`;
+      }
+      let mirrored = false,
+        explaining = false,
+        motionTime = 0;
+      function pos(p, t) {
+        let u = Math.max(
+          0,
+          Math.min(
+            1,
+            (t - (p.id === q.ball ? 0 : 0.12)) /
+              (p.id === q.ball ? 0.78 : 0.88),
+          ),
+        );
+        let x = p.x + p.dx * u,
+          y = p.y + p.dy * u;
+        const move = explaining && q.demoMoves?.[p.id];
+        if (move) {
+          x += move[0] * motionTime;
+          y += move[1] * motionTime;
+        }
+        return [mirrored ? 20 - x : x, y];
+      }
+      function target(o, t) {
+        return typeof o.target === "string"
+          ? pos(
+              q.players.find((p) => p.id === o.target),
+              t,
+            )
+          : o.target && mirrored
+            ? [20 - o.target[0], o.target[1]]
+            : o.target;
+      }
+      function recommended() {
+        const best = Math.max(...q.opts.map((o) => o.score));
+        return q.opts.filter((o) => o.score === best);
+      }
+      function escapeAttribute(value) {
+        return value
+          .replaceAll("&", "&amp;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+      function draw(t) {
+        motionTime = t;
+        if (explaining) t = 1;
+        if (q.rule) {
+          $("court").innerHTML = "";
+          return;
+        }
+        let h = q.full ? 40 : 20;
+        let g = `<svg viewBox="-.6 -.7 21.2 ${h + 1.4}" role="group" aria-label="ハンドボールコート"><rect width="20" height="${h}" fill="#e7d6b6" stroke="white" stroke-width=".1"/>${endCourt()}${q.full ? `<g transform="translate(20 40) rotate(180)">${endCourt()}</g><path d="M0 20 H20" stroke="white" stroke-width=".1"/>` : ""}<text x="10" y="${q.full ? 20 : 19.4}" font-size=".55" text-anchor="middle" fill="#36544d">${(q.ball.startsWith("R") ? "相手の攻撃方向" : "自チーム攻撃方向") + (q.down ? " ↓" : " ↑")}</text>`;
+        for (let p of q.players) {
+          let [x, y] = pos(p, t),
+            blue = p.id[0] === "B",
+            col = blue ? "#236b9c" : "#b74d51",
+            ownAttacksDown = Boolean(q.down) === q.ball.startsWith("B"),
+            angle = blue === ownAttacksDown ? 180 : 0;
+          g += `<g transform="translate(${x} ${y})"><circle r=".86" fill="${p.id === q.you ? "#e1f5d9" : "none"}" stroke="${p.id === q.you ? "#16836b" : "none"}" stroke-width=".15"/><g transform="rotate(${angle})"><ellipse cy=".1" rx=".64" ry=".39" fill="${col}" stroke="white" stroke-width=".08"/><path d="M-.55 .05 L-.8 -.28 M.55 .05 L.8 -.28" stroke="${col}" stroke-width=".22" stroke-linecap="round"/><circle cy="-.35" r=".26" fill="#e9bc96" stroke="white" stroke-width=".05"/></g><text y=".95" font-size=".48" text-anchor="middle" fill="#173c36">${p.id === q.you ? "YOU" : p.id.endsWith("K") ? "GK" : p.id.slice(1)}</text></g>`;
+        }
+        let bp = q.players.find((p) => p.id === q.ball),
+          ep = q.players.find((p) => p.id === q.passTo);
+        if (bp) {
+          let [x, y] = pos(bp, t);
+          if (ep) {
+            let z = Math.max(0, Math.min(1, (t - 0.22) / 0.4)),
+              a = pos(bp, 0.22),
+              b = pos(ep, t);
+            x = a[0] + (b[0] - a[0]) * z;
+            y = a[1] + (b[1] - a[1]) * z;
+          }
+          g += `<circle cx="${x + (mirrored ? -0.45 : 0.45)}" cy="${y - 0.35}" r=".26" fill="#f39a20" stroke="#81511d" stroke-width=".07"/>`;
+        }
+        if (explaining) {
+          const player = q.players.find((p) => p.id === q.you);
+          const a = pos(player, 1);
+          const targets = recommended()
+            .map((o) => target(o, 1))
+            .filter(Boolean);
+          for (const v of targets.length ? targets : [a]) {
+            g += `<path d="M${a.join(" ")} L${v.join(" ")}" stroke="#16836b" stroke-width=".22" stroke-dasharray=".35 .2"/><circle data-focus cx="${v[0]}" cy="${v[1]}" r="1.1" fill="none" stroke="#16836b" stroke-width=".2"/>`;
+          }
+        }
+        if (ready && stage !== "feedback")
+          q.opts.forEach((o, i) => {
+            if (!o.target) return;
+            let [x, y] = target(o, t);
+            if (
+              q.opts.some(
+                (other, j) =>
+                  j !== i &&
+                  other.target &&
+                  Math.hypot(...target(other, t).map((v, k) => v - [x, y][k])) <
+                    1.88,
+              )
+            )
+              return;
+            g += `<circle data-target="${i}" tabindex="0" role="button" aria-label="${escapeAttribute(o.label)}" aria-pressed="${selected === i}" cx="${x}" cy="${y}" r=".94" fill="${selected === i ? "#16836b" : "#fff"}" fill-opacity="${selected === i ? 0.28 : 0.06}" stroke="${selected === i ? "#16836b" : "#425e56"}" stroke-width=".12" stroke-dasharray=".2 .15"/>`;
+          });
+        $("court").innerHTML = g + "</svg>";
+        if (ready)
+          $("court")
+            .querySelectorAll("[data-target]")
+            .forEach((e) => {
+              e.onclick = () => choose(+e.dataset.target);
+              e.onkeydown = (ev) => {
+                if (ev.key === "Enter" || ev.key === " ") {
+                  ev.preventDefault();
+                  choose(+e.dataset.target);
+                }
+              };
+            });
+      }
+      function tick(now) {
+        if (!playing) return;
+        if (!last) last = now;
+        elapsed += Math.min(now - last, 100) * Number($("rate").value);
+        last = now;
+        if (elapsed < duration || explaining)
+          draw(Math.min(elapsed / duration, 1));
+        if (elapsed >= duration) {
+          if (explaining) {
+            stop();
+            explaining = false;
+            $("pause").textContent = "再生";
+            return;
+          }
+          freeze();
+          return;
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function play() {
+        stop();
+        playing = true;
+        last = 0;
+        $("pause").textContent = "一時停止";
+        raf = requestAnimationFrame(tick);
+      }
+      function freeze() {
+        if (stage !== "watch") return;
+        stop();
+        elapsed = duration;
+        ready = true;
+        stage = "choose";
+        started = performance.now();
+        $("phase").textContent = "判断場面：コートまたは選択肢をタップ";
+        $("pause").disabled = true;
+        $("skip").disabled = true;
+        draw(1);
+        renderChoices();
+        remember();
+      }
+      function show() {
+        collapse();
+        $("quiz").classList.remove("feedbackMode");
+        stop();
+        explaining = false;
+        q = byId(s.ids[s.pos]);
+        const draft = s.draft;
+        mirrored =
+          draft?.mirrored ??
+          (!!s.mirror &&
+            !!q &&
+            !q.rule &&
+            !/左|右|逆側|\b(?:LB|RB|LW|RW)\b/.test(
+              [
+                q.prompt,
+                q.why,
+                q.reason,
+                q.reasonPrompt,
+                ...q.opts.flatMap((o) => [o.label, ...(o.reasons || [])]),
+              ].join(""),
+            ) &&
+            Math.random() < 0.5);
+        $("demo").hidden = true;
+        $("viewControls").hidden = !!q?.rule;
+        if (!q) {
+          home();
+          return;
+        }
+        screen("quiz");
+        panel.hidden = !!q.rule;
+        selected = reason = -1;
+        ready = false;
+        elapsed = active = 0;
+        stage = "watch";
+        $("progress").textContent = `${s.pos + 1} / ${s.ids.length}`;
+        $("bar").style.width = `${(s.pos / s.ids.length) * 100}%`;
+        document.querySelector(".legend").hidden = !!q.rule;
+        for (let id of ["replay", "pause", "skip"]) $(id).hidden = !!q.rule;
+        $("meta").textContent = `${q.cat} / ${q.level} / ${q.role}`;
+        $("prompt").textContent = q.prompt;
+        $("clock").textContent = "";
+        $("saveStatus").textContent = "";
+        for (let id of ["feedback", "next", "reasons", "submit"])
+          $(id).hidden = true;
+        $("choices").replaceChildren();
+        $("phase").textContent = "選手の動きを観察しよう";
+        $("pause").disabled = $("skip").disabled = $("replay").disabled = false;
+        if (q.rule || draft?.ready) {
+          // Restore the draft before writing, including a previously confirmed response.
+          ready = true;
+          elapsed = duration;
+          active = draft?.active ?? 0;
+          selected = draft?.selected ?? -1;
+          reason = draft?.reason ?? -1;
+          started = performance.now();
+          stage = selected < 0 ? "choose" : "reason";
+          $("phase").textContent = q.rule
+            ? "競技規則に基づいて回答しよう"
+            : "判断場面：コートまたは選択肢をタップ";
+          $("pause").disabled = $("skip").disabled = true;
+          draw(1);
+          renderChoices();
+          if (selected >= 0) renderReasons();
+          if (s.feedback) showFeedback(s.answers.at(-1));
+          if (!draft) remember();
+        } else {
+          remember();
+          draw(0);
+          play();
+        }
+        syncBar();
+        topOf($("quiz"));
+      }
+      function buttons(el, items, fn, sel) {
+        const focused = el.contains(document.activeElement)
+          ? document.activeElement.dataset.choice
+          : null;
+        el.replaceChildren();
+        items.forEach(([i, label]) => {
+          let b = document.createElement("button");
+          b.className = "wide" + (i === sel ? " selected" : "");
+          b.textContent = label;
+          b.dataset.choice = i;
+          b.setAttribute("aria-pressed", String(i === sel));
+          b.onclick = () => fn(i);
+          el.append(b);
+          if (focused === String(i)) b.focus({ preventScroll: true });
+        });
+      }
+      let order = [],
+        reasonOrder = [];
+      function renderChoices() {
+        if (!order.length) order = shuffle(q.opts.map((_, i) => i));
+        buttons(
+          $("choices"),
+          order.map((i) => [i, q.opts[i].label]),
+          choose,
+          selected,
+        );
+      }
+      function choose(i) {
+        if (!ready || stage === "feedback" || !q.opts[i]) return;
+        if (selected < 0) {
+          active += started ? performance.now() - started : 0;
+        }
+        if (selected !== i) {
+          reason = -1;
+          reasonOrder = [];
+        }
+        selected = i;
+        stage = "reason";
+        const focusedTarget = document.activeElement.matches("[data-target]");
+        draw(1);
+        if (focusedTarget)
+          $("court")
+            .querySelector(`[data-target="${i}"]`)
+            ?.focus({ preventScroll: true });
+        renderChoices();
+        renderReasons();
+        remember();
+        syncBar();
+      }
+      function renderReasons() {
+        if (q.rule) {
+          reason = 0;
+          $("submit").hidden = false;
+          $("submit").disabled = false;
+          return;
+        }
+        $("reasons").hidden = false;
+        let labels = q.opts[selected].reasons;
+        if (!reasonOrder.length) reasonOrder = shuffle(labels.map((_, i) => i));
+        buttons(
+          $("reasons"),
+          reasonOrder.map((i) => [i, labels[i]]),
+          (i) => {
+            reason = i;
+            renderReasons();
+            remember();
+          },
+          reason,
+        );
+        let h = document.createElement("h2");
+        h.textContent = q.reasonPrompt;
+        $("reasons").prepend(h);
+        $("submit").hidden = false;
+        $("submit").disabled = reason < 0;
+      }
+      function submit() {
+        if (stage !== "reason" || reason < 0) return;
+        stage = "feedback";
+        let r = {
+          id: q.id,
+          score: q.opts[selected].score,
+          reason: q.rule ? null : reason === q.opts[selected].correctReason,
+          sec: Math.round(active / 100) / 10,
+          date: new Date().toISOString(),
+        };
+        s.answers.push(r);
+        db.records.push(r);
+        const followup = s.branching === true && continuation[q.id]?.[selected];
+        if (followup && !s.ids.includes(followup))
+          s.ids.splice(s.pos + 1, 0, followup);
+        s.feedback = true;
+        remember();
+        showFeedback(r);
+        topOf(q.rule ? $("feedback") : panel);
+        $("next").focus({ preventScroll: true });
+      }
+      function showFeedback(r) {
+        stage = "feedback";
+        $("progress").textContent = `${s.pos + 1} / ${s.ids.length}`;
+        $("feedback").hidden = false;
+        const heading = document.createElement("strong");
+        heading.textContent = `判断 ${r.score}/3点 ／ ${q.rule ? "ルール判定" : `理由 ${r.reason ? "1" : "0"}/1点`}`;
+        const details = [
+          q.why,
+          "推奨：" +
+            recommended()
+              .map((o) => o.label)
+              .join(" ／ "),
+        ];
+        if (!q.rule) {
+          const option = q.opts[selected];
+          details.push(
+            "選んだプレーの評価：" + option.reasons[option.correctReason],
+            "推奨判断の着眼点：" + q.reason,
+          );
+        }
+        $("feedback").replaceChildren(
+          heading,
+          ...details.map((detail) => {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = detail;
+            return paragraph;
+          }),
+        );
+        $("submit").hidden = true;
+        $("next").hidden = false;
+        $("next").textContent =
+          s.pos + 1 === s.ids.length ? "結果を見る" : "次の問題";
+        $("replay").disabled = true;
+        $("demo").hidden = q.rule;
+        for (let b of document.querySelectorAll(
+          "#choices button,#reasons button",
+        ))
+          b.disabled = true;
+        draw(1);
+        $("bar").style.width = `${((s.pos + 1) / s.ids.length) * 100}%`;
+        $("quiz").classList.add("feedbackMode");
+        $("phase").textContent = "解説モード：推奨判断と着眼点を確認";
+        $("pause").disabled = false;
+        $("pause").textContent = "再生";
+        $("skip").disabled = true;
+        syncBar();
+      }
+      function summary(records, title) {
+        collapse();
+        stop();
+        screen("result");
+        let el = $("result");
+        el.replaceChildren();
+        let n = records.length,
+          avg = n ? records.reduce((a, r) => a + r.score, 0) / n : 0,
+          rs = records.some((r) => r.reason !== null)
+            ? records.filter((r) => r.reason).length /
+              records.filter((r) => r.reason !== null).length
+            : 0;
+        el.innerHTML = `<h2>${title}</h2><div class="grid"><div>判断の質<div class="score">${avg.toFixed(1)}/3</div></div><div>理由正答率<div class="score">${records.some((r) => r.reason !== null) ? Math.round(rs * 100) + "%" : "未測定"}</div></div><div>回答数<div class="score">${n}</div></div><div>平均判断時間<div class="score">${n ? (records.reduce((a, r) => a + r.sec, 0) / n).toFixed(1) : "—"}秒</div></div></div><h2>カテゴリー別</h2><table><tr><th>分野</th><th>判断平均</th><th>回答数</th></tr>${cats
+          .slice(1)
+          .map((c) => {
+            let a = records.filter((r) => byId(r.id)?.cat === c);
+            return `<tr><td>${c}</td><td>${a.length ? (a.reduce((s, r) => s + r.score, 0) / a.length).toFixed(1) : "—"}</td><td>${a.length}</td></tr>`;
+          })
+          .join("")}</table>`;
+        let tactical = records.filter((r) => {
+            const item = byId(r.id);
+            return item && !item.rule;
+          }),
+          rules = records.filter((r) => byId(r.id)?.rule);
+        let avgPct = (a) =>
+          a.length
+            ? Math.round(
+                (a.reduce((n, r) => n + r.score, 0) / a.length / 3) * 100,
+              )
+            : null;
+        let axes = ["OF", "DF", "速攻", "切り替え", "GK", "ゲーム管理"];
+        let vals = axes.map((x) =>
+          avgPct(tactical.filter((r) => byId(r.id)?.cat.startsWith(x))),
+        );
+        let pt = (i, v) =>
+          [
+            150 + (Math.sin((i * Math.PI) / 3) * 83 * v) / 100,
+            115 - (Math.cos((i * Math.PI) / 3) * 83 * v) / 100,
+          ].join(",");
+        let extra = document.createElement("div");
+        extra.innerHTML = `<h2>戦術・ルール別</h2><p>戦術 ${avgPct(tactical) ?? "未測定"}${tactical.length ? "%" : ""} ／ ルール ${avgPct(rules) ?? "未測定"}${rules.length ? "%" : ""}</p><svg viewBox="0 0 300 230" aria-label="戦術理解度レーダー">${[25, 50, 75, 100].map((v) => `<polygon points="${axes.map((_, i) => pt(i, v)).join(" ")}" fill="none" stroke="#bdcec6"/>`).join("")}${axes
+          .map((x, i) => {
+            let [a, b] = pt(i, 125).split(",");
+            return `<text x="${a}" y="${b}" text-anchor="middle" font-size="10">${x}</text>${vals[i] === null ? "" : `<circle cx="${pt(i, vals[i]).split(",")[0]}" cy="${pt(i, vals[i]).split(",")[1]}" r="4" fill="#176e60"/>`}`;
+          })
+          .join(
+            "",
+          )}${vals.every((v) => v !== null) ? `<polygon points="${vals.map((v, i) => pt(i, v)).join(" ")}" fill="#176e6033" stroke="#176e60"/>` : ""}</svg><p class="muted">未回答分野は点を表示しません。</p><h2>DFシステム別</h2>${[
+          "0-6",
+          "5-1",
+          "3-2-1",
+          "4-2",
+        ]
+          .map(
+            (x) =>
+              `<p>${x}：${["OF", "DF"]
+                .map((side) => {
+                  let v = avgPct(
+                    tactical.filter(
+                      (r) =>
+                        byId(r.id)?.system === x &&
+                        byId(r.id)?.cat.startsWith(side),
+                    ),
+                  );
+                  return side + " " + (v === null ? "未測定" : v + "%");
+                })
+                .join(" ／ ")}</p>`,
+          )
+          .join(
+            "",
+          )}<p>復習対象：${weak().length}問（誤答後、直近2回満点で定着）</p>`;
+        el.append(extra);
+        let b = document.createElement("button");
+        b.className = "wide primary";
+        b.textContent = "ホームへ";
+        b.onclick = home;
+        el.append(b);
+        syncBar();
+        topOf(el);
+      }
+      function next() {
+        if (stage !== "feedback") return;
+        stage = "watch";
+        if (s.pos + 1 >= s.ids.length) {
+          db.session = null;
+          save();
+          summary(s.answers, "トレーニング結果");
+          return;
+        }
+        s.pos++;
+        delete s.feedback;
+        delete s.draft;
+        order = [];
+        reasonOrder = [];
+        show();
+      }
+      $("start").onclick = () => {
+        order = [];
+        reasonOrder = [];
+        start();
+      };
+      $("review").onclick = () => {
+        order = [];
+        reasonOrder = [];
+        start(true);
+      };
+      $("resume").onclick = () => {
+        if (!db.session || !$("quiz").hidden) return;
+        s = db.session;
+        order = [];
+        reasonOrder = [];
+        show();
+      };
+      $("history").onclick = () => summary(db.records, "学習記録");
+      $("next").onclick = next;
+      $("submit").onclick = submit;
+      $("quit").onclick = home;
+      $("skip").onclick = freeze;
+      $("replay").onclick = () => {
+        if (stage === "feedback") return;
+        selected = reason = -1;
+        ready = false;
+        elapsed = active = 0;
+        stage = "watch";
+        $("choices").replaceChildren();
+        $("reasons").hidden = $("submit").hidden = true;
+        $("pause").disabled = $("skip").disabled = false;
+        $("phase").textContent = "選手の動きを観察しよう";
+        remember();
+        draw(0);
+        play();
+        syncBar();
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          if (playing) {
+            stop();
+            $("pause").textContent = "再生";
+          }
+          if (ready && selected < 0 && stage === "choose" && started) {
+            active += performance.now() - started;
+            started = 0;
+          }
+        } else if (ready && selected < 0 && stage === "choose")
+          started = performance.now();
+      });
+      setInterval(() => {
+        if (
+          s?.mode === "speed" &&
+          ready &&
+          stage !== "feedback" &&
+          !$("quiz").hidden
+        )
+          $("clock").textContent =
+            (
+              (active +
+                (selected < 0 && started ? performance.now() - started : 0)) /
+              1000
+            ).toFixed(1) + "秒";
+      }, 150);
+      $("export").onclick = () => {
+        let u = URL.createObjectURL(
+            new Blob(
+              [
+                JSON.stringify(
+                  { version: 24, records: db.records, session: db.session },
+                  null,
+                  2,
+                ),
+              ],
+              { type: "application/json" },
+            ),
+          ),
+          a = document.createElement("a");
+        a.href = u;
+        a.download = "ITS-IQ-v24-backup.json";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      };
+      $("import").onclick = () => $("backup").click();
+      $("backup").onchange = async () => {
+        try {
+          let f = $("backup").files[0];
+          if (!f) return;
+          if (f.size > 16 * 1024 * 1024) throw Error();
+          const d = JSON.parse(await f.text());
+          if (
+            ![23, 24].includes(d?.version) ||
+            !Array.isArray(d.records) ||
+            !d.records.every(validRecord) ||
+            (d.session != null && !validSession(d.session))
+          )
+            throw Error();
+          if ($("home").hidden) return;
+          if (
+            confirm(
+              "現在の回答記録と中断データを、バックアップの内容で置き換えますか？",
+            )
+          ) {
+            const previous = db;
+            db = { records: d.records, session: d.session ?? null };
+            if (!save()) db = previous;
+            else storageNotice = "";
+            home();
+          }
+        } catch {
+          $("notice").textContent =
+            "復元できません。正しいv2.3またはv2.4のバックアップを選択してください（上限16 MB）。";
+        } finally {
+          $("backup").value = "";
+        }
+      };
+
+      // v2.4: preserve v2.3 storage key and IDs.
+      const panel = $("courtPanel");
+      function collapse() {
+        panel.classList.remove("expanded");
+        document.body.classList.remove("courtOpen");
+        for (const node of [
+          document.querySelector("header"),
+          document.querySelector("footer"),
+          ...$("quiz").children,
+        ]) {
+          node.inert = false;
+        }
+      }
+      function topOf(el) {
+        el.scrollIntoView({ block: "start", behavior: "instant" });
+      }
+      function syncBar() {
+        $("actionbar").hidden =
+          $("quiz").hidden || ($("submit").hidden && $("next").hidden);
+      }
+      function trainingPool() {
+        return Q.filter(
+          (q) =>
+            !q.followup &&
+            ["すべて", q.cat].includes($("cat").value) &&
+            ["すべて", q.level].includes($("level").value) &&
+            (["すべて", q.role].includes($("role").value) || q.rule) &&
+            ($("system").value === "すべて" || q.system === $("system").value),
+        );
+      }
+      function poolCount() {
+        const n = trainingPool().length;
+        $("start").disabled = !n;
+        $("start").textContent =
+          `開始（${Math.min(n, +$("count").value)}問／該当${n}問）`;
+      }
+      for (let id of ["cat", "level", "role", "system", "count"])
+        $(id).addEventListener("change", poolCount);
+      $("expand").onclick = () => {
+        panel.classList.add("expanded");
+        for (const node of [
+          document.querySelector("header"),
+          document.querySelector("footer"),
+          ...$("quiz").children,
+        ]) {
+          if (node !== panel) node.inert = true;
+        }
+        document.body.classList.add("courtOpen");
+        $("closeCourt").focus();
+      };
+      $("closeCourt").onclick = () => {
+        collapse();
+        $("expand").focus();
+      };
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && panel.classList.contains("expanded"))
+          $("closeCourt").click();
+      });
+      $("demo").onclick = () => {
+        if (stage !== "feedback" || q.rule) return;
+        stop();
+        explaining = true;
+        elapsed = 0;
+        play();
+        topOf(panel);
+      };
+      $("pause").onclick = () => {
+        if (playing) {
+          stop();
+          $("pause").textContent = "再生";
+        } else if (stage === "feedback") {
+          if (!explaining) {
+            explaining = true;
+            elapsed = 0;
+          }
+          play();
+        } else if (stage === "watch") play();
+      };
+      for (const id of ["break1", "break2", "break3"]) {
+        const question = byId(id);
+        question.demoMoves = { [question.you]: [0, 1] };
+      }
+      home();
+    </script>
+  </body>
+</html>
